@@ -1,0 +1,14 @@
+server:
+  port: 8082
+
+spring:
+  application:
+    name: fiap-bank-mesa-operacoes-credito
+  thymeleaf:
+    cache: false
+    prefix: classpath:/templates/
+    suffix: .html
+
+plataforma:
+  credito:
+    url: http://localhost:8081

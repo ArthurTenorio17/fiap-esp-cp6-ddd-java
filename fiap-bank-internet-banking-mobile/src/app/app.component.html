@@ -1,0 +1,448 @@
+<div class="mobile-frame">
+  <!-- Mobile Status Bar Mockup -->
+  <div class="status-bar">
+    <span class="time">12:45</span>
+    <div class="status-icons">
+      <i class="fa-solid fa-signal"></i>
+      <i class="fa-solid fa-wifi"></i>
+      <i class="fa-solid fa-battery-full"></i>
+    </div>
+  </div>
+
+  <!-- Header -->
+  <header class="app-header">
+    <div class="header-top">
+      <div class="brand">
+        <div class="brand-logo">F</div>
+        <div>
+          <h1 class="brand-title">FIAP <span>BANK</span></h1>
+          <span class="account-subtitle">Ag {{contaInfo.agencia}} | CC {{contaInfo.numeroConta}}</span>
+        </div>
+      </div>
+      <button class="user-avatar" (click)="setTab('core')" title="Perfil e Core Bancário">
+        <i class="fa-solid fa-user"></i>
+      </button>
+    </div>
+
+    <!-- Greeting & Quick Balance Card -->
+    <div class="welcome-box">
+      <div class="user-greeting">
+        <span>Olá, <strong>{{nomeCliente}}</strong></span>
+        <button class="toggle-balance" (click)="toggleBalanceVisibility()" title="Alternar visibilidade do saldo">
+          <i class="fa-solid" [ngClass]="hideBalance ? 'fa-eye-slash text-danger' : 'fa-eye text-emerald'"></i>
+        </button>
+      </div>
+
+      <div class="balance-container">
+        <span class="balance-label">Saldo em conta corrente</span>
+        <h2 class="balance-amount" *ngIf="!hideBalance">
+          R$ {{contaInfo.saldo | number:'1.2-2':'pt-BR'}}
+        </h2>
+        <h2 class="balance-amount hidden" *ngIf="hideBalance">
+          R$ ••••••
+        </h2>
+      </div>
+
+      <!-- Quick Action Buttons -->
+      <div class="quick-actions">
+        <button class="action-btn" (click)="setTab('credito')">
+          <div class="action-icon bg-red"><i class="fa-solid fa-hand-holding-dollar"></i></div>
+          <span>Pedir Crédito</span>
+        </button>
+        <button class="action-btn" (click)="setTab('extrato')">
+          <div class="action-icon bg-blue"><i class="fa-solid fa-receipt"></i></div>
+          <span>Extrato</span>
+        </button>
+        <button class="action-btn" (click)="setTab('historico')">
+          <div class="action-icon bg-purple"><i class="fa-solid fa-clock-rotate-left"></i></div>
+          <span>Status</span>
+        </button>
+        <button class="action-btn" (click)="setTab('core')">
+          <div class="action-icon bg-emerald"><i class="fa-solid fa-building-columns"></i></div>
+          <span>Core Bank</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content Body -->
+  <main class="app-body">
+
+    <!-- Global Alert Banner -->
+    <div class="alert-banner" *ngIf="feedbackMessage" [ngClass]="feedbackType">
+      <i class="fa-solid" [ngClass]="{
+        'fa-circle-check': feedbackType === 'success',
+        'fa-triangle-exclamation': feedbackType === 'warning',
+        'fa-circle-xmark': feedbackType === 'error'
+      }"></i>
+      <span>{{feedbackMessage}}</span>
+      <button class="close-alert" (click)="feedbackMessage = null">&times;</button>
+    </div>
+
+    <!-- TAB 1: HOME -->
+    <div class="tab-content" *ngIf="activeTab === 'home'">
+
+      <!-- Banner de Crédito Pré-Aprovado -->
+      <div class="credit-banner-card" (click)="setTab('credito')">
+        <div class="banner-badge">PRÉ-APROVADO</div>
+        <div class="banner-body">
+          <h3>Empréstimo Pessoal FIAP</h3>
+          <p>Você tem até <strong>R$ 50.000,00</strong> disponíveis com taxas a partir de 1,49% a.m.</p>
+          <div class="banner-footer">
+            <span>Contratação 100% digital</span>
+            <i class="fa-solid fa-arrow-right"></i>
+          </div>
+        </div>
+      </div>
+
+      <!-- Outros Serviços de Crédito -->
+      <div class="section-header">
+        <h4>Esteira de Produtos de Crédito</h4>
+        <span class="see-all" (click)="setTab('credito')">Ver todos</span>
+      </div>
+
+      <div class="products-grid">
+        <div class="product-card" (click)="selectTipo('EMPRÉSTIMO PESSOAL'); setTab('credito');">
+          <i class="fa-solid fa-user-tag text-red"></i>
+          <h5>Pessoal</h5>
+          <span>Até 60x</span>
+        </div>
+        <div class="product-card" (click)="selectTipo('CRÉDITO IMOBILIÁRIO'); setTab('credito');">
+          <i class="fa-solid fa-house-chimney text-blue"></i>
+          <h5>Imobiliário</h5>
+          <span>Até 360x</span>
+        </div>
+        <div class="product-card" (click)="selectTipo('CRÉDITO AUTOMOTIVO'); setTab('credito');">
+          <i class="fa-solid fa-car text-amber"></i>
+          <h5>Automotivo</h5>
+          <span>Até 48x</span>
+        </div>
+        <div class="product-card" (click)="selectTipo('CONSIGNADO'); setTab('credito');">
+          <i class="fa-solid fa-file-signature text-emerald"></i>
+          <h5>Consignado</h5>
+          <span>Taxas baixas</span>
+        </div>
+      </div>
+
+      <!-- Resumo de Extrato Recente -->
+      <div class="section-header mt-4">
+        <h4>Últimas Movimentações</h4>
+        <span class="see-all" (click)="setTab('extrato')">Ver Extrato</span>
+      </div>
+
+      <div class="recent-list" *ngIf="transacoes.length > 0">
+        <div class="recent-item" *ngFor="let t of transacoes.slice(0, 3)" (click)="setTab('extrato')">
+          <div class="item-left">
+            <i class="fa-solid me-2 fs-5" [ngClass]="t.icone"></i>
+            <div>
+              <span class="item-title">{{t.descricao}}</span>
+              <span class="item-date">{{t.data | date:'dd/MM/yyyy HH:mm'}}</span>
+            </div>
+          </div>
+          <span class="fw-bold" [ngClass]="t.tipo === 'ENTRADA' ? 'text-emerald' : 'text-danger'">
+            {{t.tipo === 'ENTRADA' ? '+' : '-'}} R$ {{t.valor | number:'1.2-2':'pt-BR'}}
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 2: SOLICITAR CRÉDITO -->
+    <div class="tab-content" *ngIf="activeTab === 'credito'">
+      <div class="form-title">
+        <h2>Solicitação de Crédito</h2>
+        <p>Preencha os dados e receba a análise em tempo real pela Plataforma de Crédito.</p>
+      </div>
+
+      <!-- Selector de Tipo de Crédito -->
+      <label class="input-label">Selecione a Modalidade</label>
+      <div class="tipo-selector">
+        <div class="tipo-chip" *ngFor="let tipo of tiposCredito"
+             [ngClass]="{ active: selectedTipoCredito === tipo.id }"
+             (click)="selectTipo(tipo.id)">
+          <i class="fa-solid" [ngClass]="tipo.icone"></i>
+          <div>
+            <span class="chip-name">{{tipo.nome}}</span>
+            <span class="chip-rate">{{tipo.taxa}}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Campo de Destaque: VALOR DESEJADO (Altamente Visível) -->
+      <div class="form-group amount-highlight-group">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <label class="input-label mb-0 fw-bold text-light">Valor Desejado da Proposta</label>
+          <span class="amount-badge">
+            <i class="fa-solid fa-coins me-1"></i> R$ {{valorSolicitado | number:'1.2-2':'pt-BR'}}
+          </span>
+        </div>
+
+        <div class="input-wrapper mb-2">
+          <i class="fa-solid fa-dollar-sign text-emerald fs-5"></i>
+          <input type="number" [(ngModel)]="valorSolicitado" min="1000" max="500000" step="500" class="custom-input amount-input-field" placeholder="Digite o valor desejado (ex: 15000)">
+        </div>
+
+        <input type="range" [(ngModel)]="valorSolicitado" min="1000" max="200000" step="1000" class="custom-range">
+        <div class="d-flex justify-content-between text-muted x-small mt-1">
+          <span>Min: R$ 1.000</span>
+          <span>Max: R$ 200.000</span>
+        </div>
+      </div>
+
+      <!-- Outros Campos -->
+      <div class="form-group mt-3">
+        <label class="input-label">CPF do Solicitante</label>
+        <div class="input-wrapper">
+          <i class="fa-solid fa-id-card"></i>
+          <input type="text" [(ngModel)]="cpfCliente" class="custom-input" placeholder="000.000.000-00">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="input-label">Nome Completo</label>
+        <div class="input-wrapper">
+          <i class="fa-solid fa-user"></i>
+          <input type="text" [(ngModel)]="nomeCliente" class="custom-input">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="input-label">Renda Mensal (R$)</label>
+        <div class="input-wrapper">
+          <i class="fa-solid fa-wallet"></i>
+          <input type="number" [(ngModel)]="rendaMensal" class="custom-input">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="input-label">Quantidade de Parcelas</label>
+        <div class="parcelas-grid">
+          <button *ngFor="let p of [12, 24, 36, 48, 60, 120]"
+                  class="parcela-btn"
+                  [ngClass]="{ active: quantidadeParcelas === p }"
+                  (click)="quantidadeParcelas = p">
+            {{p}}x
+          </button>
+        </div>
+      </div>
+
+      <!-- Live Simulation Card -->
+      <div class="simulation-card">
+        <div class="sim-header">
+          <i class="fa-solid fa-calculator text-red"></i>
+          <span>Simulação do Empréstimo</span>
+        </div>
+        <div class="sim-row">
+          <span>Valor do Crédito:</span>
+          <strong class="text-light">R$ {{valorSolicitado | number:'1.2-2':'pt-BR'}}</strong>
+        </div>
+        <div class="sim-row">
+          <span>Parcela Estimada:</span>
+          <strong class="sim-highlight">R$ {{parcelaEstimada | number:'1.2-2':'pt-BR'}} / mês</strong>
+        </div>
+        <div class="sim-row small">
+          <span>Total a Pagar em {{quantidadeParcelas}}x:</span>
+          <span>R$ {{totalPagar | number:'1.2-2':'pt-BR'}}</span>
+        </div>
+      </div>
+
+      <!-- Submit Button -->
+      <button class="submit-btn" [disabled]="loading" (click)="solicitarCredito()">
+        <span *ngIf="!loading"><i class="fa-solid fa-paper-plane me-2"></i>Enviar Solicitação à Plataforma</span>
+        <span *ngIf="loading"><i class="fa-solid fa-spinner fa-spin me-2"></i>Processando proposta...</span>
+      </button>
+    </div>
+
+    <!-- TAB 3: EXTRATO DE MOVIMENTAÇÕES -->
+    <div class="tab-content" *ngIf="activeTab === 'extrato'">
+      <div class="form-title">
+        <h2>Extrato de Conta Corrente</h2>
+        <p>Histórico completo de entradas, saídas e liberação de créditos.</p>
+      </div>
+
+      <!-- Extrato Summary Cards -->
+      <div class="extrato-summary mb-3">
+        <div class="extrato-card bg-emerald-dim">
+          <span>Total Entradas</span>
+          <strong class="text-emerald">+ R$ {{totalEntradas | number:'1.2-2':'pt-BR'}}</strong>
+        </div>
+        <div class="extrato-card bg-danger-dim">
+          <span>Total Saídas</span>
+          <strong class="text-danger">- R$ {{totalSaidas | number:'1.2-2':'pt-BR'}}</strong>
+        </div>
+      </div>
+
+      <!-- Extrato Filter Chips -->
+      <div class="filter-chips mb-3">
+        <button class="filter-chip" [ngClass]="{ active: filtroExtrato === 'TODAS' }" (click)="filtroExtrato = 'TODAS'">
+          Todas
+        </button>
+        <button class="filter-chip" [ngClass]="{ active: filtroExtrato === 'ENTRADAS' }" (click)="filtroExtrato = 'ENTRADAS'">
+          <i class="fa-solid fa-arrow-down me-1 text-emerald"></i> Entradas
+        </button>
+        <button class="filter-chip" [ngClass]="{ active: filtroExtrato === 'SAIDAS' }" (click)="filtroExtrato = 'SAIDAS'">
+          <i class="fa-solid fa-arrow-up me-1 text-danger"></i> Saídas
+        </button>
+      </div>
+
+      <!-- Transacoes List -->
+      <div class="transacoes-list">
+        <div class="transacao-item" *ngFor="let t of transacoesFiltradas">
+          <div class="transacao-icon">
+            <i class="fa-solid fs-5" [ngClass]="t.icone"></i>
+          </div>
+          <div class="transacao-info">
+            <h5 class="transacao-desc">{{t.descricao}}</h5>
+            <span class="transacao-date">{{t.data | date:'dd/MM/yyyy HH:mm'}} • {{t.categoria}}</span>
+          </div>
+          <div class="transacao-valor" [ngClass]="t.tipo === 'ENTRADA' ? 'text-emerald' : 'text-danger'">
+            {{t.tipo === 'ENTRADA' ? '+' : '-'}} R$ {{t.valor | number:'1.2-2':'pt-BR'}}
+          </div>
+        </div>
+
+        <div class="empty-state" *ngIf="transacoesFiltradas.length === 0">
+          <i class="fa-solid fa-receipt fs-1 text-muted mb-2"></i>
+          <p>Nenhuma movimentação encontrada para o filtro selecionado.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 4: MINHAS SOLICITAÇÕES ESTEIRA -->
+    <div class="tab-content" *ngIf="activeTab === 'historico'">
+      <div class="form-title">
+        <h2>Minhas Solicitações</h2>
+        <p>Acompanhe o status das suas propostas na Esteira de Crédito.</p>
+      </div>
+
+      <!-- Input de Consulta por CPF -->
+      <div class="search-box">
+        <input type="text" [(ngModel)]="cpfCliente" placeholder="Digite seu CPF" class="custom-input">
+        <button class="search-btn" (click)="carregarSolicitacoes()">
+          <i class="fa-solid fa-magnifying-glass"></i>
+        </button>
+      </div>
+
+      <!-- List -->
+      <div class="history-list mt-3">
+        <div class="history-card" *ngFor="let sol of solicitacoes">
+          <div class="card-top">
+            <div>
+              <span class="card-id">Solicitação #{{sol.id}}</span>
+              <h4 class="card-modalidade">{{sol.tipoCredito}}</h4>
+            </div>
+            <span class="status-badge" [ngClass]="sol.status.toLowerCase()">
+              {{sol.status === 'EM_ANALISE' ? 'EM ANÁLISE' : sol.status}}
+            </span>
+          </div>
+
+          <div class="card-details">
+            <div class="detail-col">
+              <span>Valor Solicitado</span>
+              <strong class="text-light">R$ {{sol.valorSolicitado | number:'1.2-2':'pt-BR'}}</strong>
+            </div>
+            <div class="detail-col">
+              <span>Prazo</span>
+              <strong>{{sol.quantidadeParcelas}}x</strong>
+            </div>
+            <div class="detail-col">
+              <span>Score Risco</span>
+              <strong class="score-pill">{{sol.scoreBureau || 750}} pts</strong>
+            </div>
+          </div>
+
+          <div class="card-parecer" *ngIf="sol.parecerOperador">
+            <i class="fa-solid fa-comment-dots text-muted"></i>
+            <span>{{sol.parecerOperador}}</span>
+          </div>
+
+          <div class="card-footer">
+            <span class="date-text"><i class="fa-regular fa-clock me-1"></i> Data: {{sol.dataSolicitacao | date:'dd/MM/yyyy HH:mm'}}</span>
+          </div>
+        </div>
+
+        <div class="empty-state" *ngIf="solicitacoes.length === 0 && !loading">
+          <i class="fa-solid fa-file-invoice-dollar fs-1 text-muted mb-2"></i>
+          <p>Nenhuma solicitação encontrada para o CPF informado.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 5: CORE BANCÁRIO DETALHES -->
+    <div class="tab-content" *ngIf="activeTab === 'core'">
+      <div class="form-title">
+        <h2>Core Bancário FIAP Bank</h2>
+        <p>Dados centralizados da conta e do cliente (Arquitetura RESTful DDD).</p>
+      </div>
+
+      <div class="core-info-card">
+        <div class="core-header justify-content-between">
+          <div class="d-flex align-items-center gap-3">
+            <i class="fa-solid fa-building-columns text-red fs-2"></i>
+            <div>
+              <h3 class="mb-0 fw-bold">{{nomeCliente}}</h3>
+              <span class="text-muted">CPF: {{cpfCliente}}</span>
+            </div>
+          </div>
+          <!-- Botão Toggle Olho de Visibilidade no próprio Core Bancário -->
+          <button class="btn btn-outline-secondary btn-sm rounded-circle p-2" (click)="toggleBalanceVisibility()" title="Alternar Visibilidade do Saldo">
+            <i class="fa-solid" [ngClass]="hideBalance ? 'fa-eye-slash text-danger' : 'fa-eye text-emerald'"></i>
+          </button>
+        </div>
+
+        <div class="core-divider"></div>
+
+        <div class="core-row">
+          <span>Status da Conta:</span>
+          <span class="badge bg-success">{{contaInfo.statusConta}}</span>
+        </div>
+        <div class="core-row">
+          <span>Agência Bancária:</span>
+          <strong>{{contaInfo.agencia}}</strong>
+        </div>
+        <div class="core-row">
+          <span>Número da Conta:</span>
+          <strong>{{contaInfo.numeroConta}}</strong>
+        </div>
+        <div class="core-row align-items-center">
+          <span>Saldo Disponível no Core:</span>
+          <!-- Exibição de Saldo respeitando a visibilidade do olho -->
+          <strong class="text-emerald fs-4" *ngIf="!hideBalance">
+            R$ {{contaInfo.saldo | number:'1.2-2':'pt-BR'}}
+          </strong>
+          <strong class="text-muted fs-4" *ngIf="hideBalance">
+            R$ ••••••
+          </strong>
+        </div>
+
+        <div class="mt-3 p-3 rounded-3 bg-dark border border-secondary text-center small text-muted">
+          <i class="fa-solid fa-shield-halved me-1 text-warning"></i>
+          Informações sincronizadas com a API RESTful do <strong>fiap-bank-core-bancario</strong>.
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Bottom Navigation Bar -->
+  <nav class="bottom-nav">
+    <button class="nav-item" [ngClass]="{ active: activeTab === 'home' }" (click)="setTab('home')">
+      <i class="fa-solid fa-house"></i>
+      <span>Início</span>
+    </button>
+    <button class="nav-item" [ngClass]="{ active: activeTab === 'credito' }" (click)="setTab('credito')">
+      <i class="fa-solid fa-hand-holding-dollar"></i>
+      <span>Crédito</span>
+    </button>
+    <button class="nav-item" [ngClass]="{ active: activeTab === 'extrato' }" (click)="setTab('extrato')">
+      <i class="fa-solid fa-receipt"></i>
+      <span>Extrato</span>
+    </button>
+    <button class="nav-item" [ngClass]="{ active: activeTab === 'historico' }" (click)="setTab('historico')">
+      <i class="fa-solid fa-clock-rotate-left"></i>
+      <span>Status</span>
+    </button>
+    <button class="nav-item" [ngClass]="{ active: activeTab === 'core' }" (click)="setTab('core')">
+      <i class="fa-solid fa-building-columns"></i>
+      <span>Core Bank</span>
+    </button>
+  </nav>
+</div>
