@@ -1,27 +1,98 @@
-# FiapBankInternetBankingMobile
+# FIAP Bank - Internet Banking Mobile 📱
 
-This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 17.3.6.
+Aplicação Web Mobile responsiva (**Mobile-First**) do cliente final do **FIAP Bank**, desenvolvida em **Angular 17+**. 
 
-## Development server
+Permite que os clientes consultem seu saldo e dados da conta, simulem propostas de crédito em tempo real (Empréstimo Pessoal, Financiamento Imobiliário, Crédito Automotivo e Consignado), enviem propostas para a esteira da Plataforma de Crédito e acompanhem o status de suas solicitações.
 
-Run `ng serve` for a dev server. Navigate to `http://localhost:4200/`. The application will automatically reload if you change any of the source files.
+---
 
-## Code scaffolding
+## 🛠️ Tecnologias Utilizadas
 
-Run `ng generate component component-name` to generate a new component. You can also use `ng generate directive|pipe|service|class|guard|interface|enum|module`.
+- **Angular 17.3+** (Standalone Components)
+- **TypeScript 5.4+**
+- **RxJS 7.8+**
+- **HTML5 & CSS3** (layout responsivo com estética premium e fluida para smartphone)
+- **Node.js / npm**
 
-## Build
+---
 
-Run `ng build` to build the project. The build artifacts will be stored in the `dist/` directory.
+## 📋 Pré-requisitos
 
-## Running unit tests
+- **Node.js** (versão 18.x LTS ou 20.x LTS recomendada).
+- **npm** (gerenciador de pacotes, incluído com o Node.js).
+- *(Recomendado)* Serviço **Plataforma de Crédito** em execução na porta `8081`.
 
-Run `ng test` to execute the unit tests via [Karma](https://karma-runner.github.io).
+---
 
-## Running end-to-end tests
+## 🚀 Como Executar a Aplicação
 
-Run `ng e2e` to execute the end-to-end tests via a platform of your choice. To use this command, you need to first add a package that implements end-to-end testing capabilities.
+### 1. Instalar as dependências
 
-## Further help
+Navegue até o diretório do projeto e execute:
 
-To get more help on the Angular CLI use `ng help` or go check out the [Angular CLI Overview and Command Reference](https://angular.io/cli) page.
+```bash
+cd fiap-bank-internet-banking-mobile
+npm install
+```
+
+### 2. Iniciar o servidor de desenvolvimento
+
+Execute o comando:
+
+```bash
+npm run start
+```
+*(ou se possuir o Angular CLI globalmente: `ng serve`)*
+
+A aplicação estará disponível em: **`http://localhost:4200`**
+
+O servidor inclui suporte a *Hot Reloading*, atualizando automaticamente a página ao salvar alterações no código.
+
+---
+
+## ⚙️ Configuração de Endpoints
+
+A URL da API da **Plataforma de Crédito** é configurada em:
+
+1. **Tempo de Execução (Runtime):** `src/assets/config/app-config.json`
+   ```json
+   {
+     "plataformaCreditoUrl": "http://localhost:8081/api/credito"
+   }
+   ```
+2. **Tempo de Compilação (Build):** `src/environments/environment.ts` (desenvolvimento) e `src/environments/environment.prod.ts` (produção).
+
+---
+
+## 📱 Funcionalidades da Aplicação
+
+- **Início (Home):** Visão geral do saldo em conta, atalhos rápidos e resumo dos produtos disponíveis.
+- **Simulador e Solicitação de Crédito:**
+  - Escolha do tipo de linha de crédito (*Pessoal, Imobiliário, Automotivo, Consignado*).
+  - Ajuste dinâmico de valor e quantidade de parcelas com cálculo automático da parcela estimada e taxas.
+  - Submissão da proposta para análise na esteira da Plataforma de Crédito via chamada HTTP POST.
+- **Histórico de Solicitações:** Consulta em tempo real de todas as propostas vinculadas ao CPF do cliente, com badges de status (*Aprovado, Em Análise, Reprovado*) e pareceres.
+- **Extrato Bancário:** Visualização dos lançamentos e movimentações de crédito/débito.
+- **Consulta ao Core:** Visualização das informações retornadas diretamente do Core Bancário via integração Feign.
+
+---
+
+## 📦 Build para Produção
+
+Para gerar os artefatos estáticos otimizados para produção:
+
+```bash
+npm run build
+```
+
+Os arquivos compilados serão gerados no diretório `dist/fiap-bank-internet-banking-mobile/`.
+
+---
+
+## 🧪 Executar Testes Unitários
+
+Para rodar os testes unitários com Karma e Jasmine:
+
+```bash
+npm test
+```

@@ -1,0 +1,108 @@
+# =======================================================================
+# Java & Maven / Gradle (Compilados e Artefatos)
+# =======================================================================
+target/
+**/target/
+*.class
+
+# Pacotes e binários
+*.jar
+*.war
+*.nar
+*.ear
+*.zip
+*.tar.gz
+*.rar
+
+# Maven / Gradle wrappers e cache
+.mvn/timing.properties
+.mvn/wrapper/maven-wrapper.jar
+.gradle/
+build/
+**/build/
+
+# Bancos de dados locais / logs
+*.log
+logs/
+**/logs/
+*.mv.db
+*.trace.db
+
+# =======================================================================
+# Angular & Node.js (Compilados, Dependências e Cache)
+# =======================================================================
+node_modules/
+**/node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# Saída de compilação do Angular (dist, out-tsc, etc)
+dist/
+**/dist/
+tmp/
+**/tmp/
+out-tsc/
+**/out-tsc/
+bazel-out/
+.angular/
+**/.angular/
+.sass-cache/
+connect.lock
+coverage/
+**/coverage/
+libpeerconnection.log
+testem.log
+typings/
+
+# =======================================================================
+# IDEs & Editores de Código
+# =======================================================================
+# IntelliJ IDEA
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+
+# Eclipse
+.project
+.classpath
+.settings/
+.springBeans
+.factorypath
+
+# NetBeans
+nbproject/private/
+nbbuild/
+nbdist/
+.nb-attrs
+
+# Visual Studio Code
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.history/
+
+# Sublime Text
+*.sublime-workspace
+*.sublime-project
+
+# =======================================================================
+# Sistema Operacional & Variáveis de Ambiente
+# =======================================================================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+*~
+*.swp
+*.swo
+.env
+.env.local
