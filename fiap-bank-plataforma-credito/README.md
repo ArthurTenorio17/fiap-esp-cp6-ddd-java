@@ -2,7 +2,7 @@
 
 Microsserviço de **Esteira e Motor de Decisão de Crédito** do FIAP Bank. Responsável por processar propostas de crédito, avaliar regras de negócio e risco, comunicar-se com o Core Bancário via **Spring Cloud OpenFeign**, simular verificações no SCR (Banco Central) e Bureau de Crédito (Serasa/SPC), e notificar clientes.
 
-A API foi projetada com arquitetura **Non-RESTful (All POST)**, na qual todas as operações (consultas, inclusões e alterações de status) utilizam o método HTTP `POST` com verbos de ação semânticos no path.
+A API foi projetada de forma que todas as operações utilizeßm o método HTTP `POST` com verbos de ação semânticos no path.
 
 ---
 
