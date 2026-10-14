@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>br.com.fiap.bank</groupId>
+        <artifactId>fiap-bank-core-bancario</artifactId>
+        <version>1.0.0-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>fiap-bank-core-bancario-presentation</artifactId>
+    <name>FIAP Bank - Core Bancario - Presentation</name>
+    <description>Controllers REST, tratamento global de excecoes e ponto de entrada Spring Boot (porta 8080)</description>
+
+    <dependencies>
+        <dependency>
+            <groupId>br.com.fiap.bank</groupId>
+            <artifactId>fiap-bank-core-bancario-application</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <!-- Quando existir a classe @SpringBootApplication, adicione aqui o spring-boot-maven-plugin -->
+
+            <!-- presentation so declara application; domain/infrastructure chegam apenas de forma transitiva -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>presentation-so-enxerga-application</id>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <bannedDependencies>
+                                    <searchTransitive>false</searchTransitive>
+                                    <excludes>
+                                        <exclude>br.com.fiap.bank:fiap-bank-core-bancario-domain</exclude>
+                                        <exclude>br.com.fiap.bank:fiap-bank-core-bancario-infrastructure</exclude>
+                                    </excludes>
+                                    <message>presentation so pode declarar dependencia direta de application.</message>
+                                </bannedDependencies>
+                            </rules>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project>
