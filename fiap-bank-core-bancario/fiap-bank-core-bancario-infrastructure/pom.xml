@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>br.com.fiap.bank</groupId>
+        <artifactId>fiap-bank-core-bancario</artifactId>
+        <version>1.0.0-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>fiap-bank-core-bancario-infrastructure</artifactId>
+    <name>FIAP Bank - Core Bancario - Infrastructure</name>
+    <description>Persistencia (Spring Data JPA) e adapters das portas de repositorio do dominio</description>
+
+    <dependencies>
+        <dependency>
+            <groupId>br.com.fiap.bank</groupId>
+            <artifactId>fiap-bank-core-bancario-domain</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-jpa</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-jpa-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <!-- infrastructure so conhece o domain (nunca application nem presentation) -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>sem-camadas-superiores</id>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <bannedDependencies>
+                                    <excludes>
+                                        <exclude>br.com.fiap.bank:fiap-bank-core-bancario-application</exclude>
+                                        <exclude>br.com.fiap.bank:fiap-bank-core-bancario-presentation</exclude>
+                                        <exclude>org.springframework.boot:spring-boot-starter-web*</exclude>
+                                        <exclude>org.springframework.boot:spring-boot-starter-webmvc*</exclude>
+                                    </excludes>
+                                    <message>infrastructure so pode depender de domain.</message>
+                                </bannedDependencies>
+                            </rules>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project>
