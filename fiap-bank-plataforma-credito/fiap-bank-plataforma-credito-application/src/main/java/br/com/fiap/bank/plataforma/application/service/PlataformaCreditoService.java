@@ -5,6 +5,7 @@ import br.com.fiap.bank.plataforma.domain.gateway.ScrGateway;
 import br.com.fiap.bank.plataforma.domain.gateway.BureauCreditoGateway;
 import br.com.fiap.bank.plataforma.domain.gateway.NotificacaoGateway;
 import br.com.fiap.bank.plataforma.domain.gateway.CoreBancarioGateway;
+import br.com.fiap.bank.plataforma.domain.exception.SolicitacaoNaoEncontradaException;
 
 import org.springframework.stereotype.Service;
 
@@ -156,10 +157,9 @@ public class PlataformaCreditoService {
 
         SolicitacaoCredito solicitacao = repository
                 .buscarPorId(request.solicitacaoId())
-                .orElseThrow(() -> new IllegalArgumentException(
-                        "Solicitacao nao encontrada com ID: "
-                                + request.solicitacaoId()
-                ));
+                .orElseThrow(() ->
+                        new SolicitacaoNaoEncontradaException(request.solicitacaoId())
+                );
 
         return SolicitacaoCreditoResponseDTO.fromEntity(solicitacao);
     }
@@ -179,10 +179,9 @@ public class PlataformaCreditoService {
 
         SolicitacaoCredito solicitacao = repository
                 .buscarPorId(request.solicitacaoId())
-                .orElseThrow(() -> new IllegalArgumentException(
-                        "Solicitacao de credito nao encontrada com ID: "
-                                + request.solicitacaoId()
-                ));
+                .orElseThrow(() ->
+                        new SolicitacaoNaoEncontradaException(request.solicitacaoId())
+                );
 
         String parecer = "Aprovado pela Mesa de Operacoes: "
                 + (request.parecerOperador() != null
@@ -209,10 +208,9 @@ public class PlataformaCreditoService {
 
         SolicitacaoCredito solicitacao = repository
                 .buscarPorId(request.solicitacaoId())
-                .orElseThrow(() -> new IllegalArgumentException(
-                        "Solicitacao de credito nao encontrada com ID: "
-                                + request.solicitacaoId()
-                ));
+                .orElseThrow(() ->
+                        new SolicitacaoNaoEncontradaException(request.solicitacaoId())
+                );
 
         String parecer = "Reprovado pela Mesa de Operacoes. Motivo: "
                 + (request.motivoReprovacao() != null

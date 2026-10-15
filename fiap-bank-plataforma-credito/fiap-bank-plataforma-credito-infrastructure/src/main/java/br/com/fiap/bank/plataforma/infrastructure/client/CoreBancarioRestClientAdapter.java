@@ -1,6 +1,8 @@
 package br.com.fiap.bank.plataforma.infrastructure.client;
 
 import br.com.fiap.bank.plataforma.domain.gateway.CoreBancarioGateway;
+import br.com.fiap.bank.plataforma.domain.exception.CoreBancarioIndisponivelException;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
@@ -34,7 +36,7 @@ public class CoreBancarioRestClientAdapter implements CoreBancarioGateway {
                     .body(Map.class);
 
             if (resposta == null) {
-                throw new IllegalStateException(
+                throw new CoreBancarioIndisponivelException(
                         "O Core Bancario retornou uma resposta vazia."
                 );
             }
@@ -42,7 +44,7 @@ public class CoreBancarioRestClientAdapter implements CoreBancarioGateway {
             return resposta;
 
         } catch (RestClientException e) {
-            throw new IllegalStateException(
+            throw new CoreBancarioIndisponivelException(
                     "Falha ao consultar a conta do cliente no Core Bancario.",
                     e
             );

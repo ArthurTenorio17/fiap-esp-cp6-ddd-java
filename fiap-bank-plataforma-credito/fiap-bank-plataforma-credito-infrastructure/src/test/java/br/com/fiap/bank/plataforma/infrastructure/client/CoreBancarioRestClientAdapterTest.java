@@ -1,5 +1,7 @@
 package br.com.fiap.bank.plataforma.infrastructure.client;
 
+import br.com.fiap.bank.plataforma.domain.exception.CoreBancarioIndisponivelException;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.web.client.MockRestServiceServer;
@@ -54,10 +56,13 @@ class CoreBancarioRestClientAdapterTest {
                 adapter.consultarContaCliente("12345678901");
 
         assertEquals("ATIVA", resposta.get("statusConta"));
-        assertEquals(2500.0,
+        assertEquals(
+                2500.0,
                 ((Number) resposta.get("saldo")).doubleValue(),
-                0.001);
+                0.001
+        );
         assertEquals("0001", resposta.get("agencia"));
+        assertEquals("12345-6", resposta.get("numeroConta"));
 
         server.verify();
     }
@@ -69,8 +74,8 @@ class CoreBancarioRestClientAdapterTest {
                 ))
                 .andRespond(withResourceNotFound());
 
-        IllegalStateException excecao = assertThrows(
-                IllegalStateException.class,
+        CoreBancarioIndisponivelException excecao = assertThrows(
+                CoreBancarioIndisponivelException.class,
                 () -> adapter.consultarContaCliente("00000000000")
         );
 
@@ -89,9 +94,14 @@ class CoreBancarioRestClientAdapterTest {
                 ))
                 .andRespond(withServerError());
 
-        assertThrows(
-                IllegalStateException.class,
+        CoreBancarioIndisponivelException excecao = assertThrows(
+                CoreBancarioIndisponivelException.class,
                 () -> adapter.consultarContaCliente("12345678901")
+        );
+
+        assertEquals(
+                "Falha ao consultar a conta do cliente no Core Bancario.",
+                excecao.getMessage()
         );
 
         server.verify();
@@ -107,8 +117,8 @@ class CoreBancarioRestClientAdapterTest {
                         APPLICATION_JSON
                 ));
 
-        IllegalStateException excecao = assertThrows(
-                IllegalStateException.class,
+        CoreBancarioIndisponivelException excecao = assertThrows(
+                CoreBancarioIndisponivelException.class,
                 () -> adapter.consultarContaCliente("12345678901")
         );
 

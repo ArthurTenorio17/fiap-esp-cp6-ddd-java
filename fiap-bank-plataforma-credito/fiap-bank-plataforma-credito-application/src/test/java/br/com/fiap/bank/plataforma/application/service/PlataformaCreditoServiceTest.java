@@ -8,6 +8,7 @@ import br.com.fiap.bank.plataforma.domain.gateway.ScrGateway;
 import br.com.fiap.bank.plataforma.domain.model.SolicitacaoCredito;
 import br.com.fiap.bank.plataforma.domain.model.StatusSolicitacao;
 import br.com.fiap.bank.plataforma.domain.repository.SolicitacaoCreditoRepository;
+import br.com.fiap.bank.plataforma.domain.exception.SolicitacaoNaoEncontradaException;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -225,11 +226,16 @@ class PlataformaCreditoServiceTest {
         when(repository.buscarPorId(99L))
                 .thenReturn(Optional.empty());
 
-        assertThrows(
-                IllegalArgumentException.class,
+        SolicitacaoNaoEncontradaException excecao = assertThrows(
+                SolicitacaoNaoEncontradaException.class,
                 () -> service.buscarPorId(
                         new BuscarSolicitacaoRequest(99L)
                 )
+        );
+
+        assertEquals(
+                "Solicitacao de credito nao encontrada com ID: 99",
+                excecao.getMessage()
         );
     }
 
