@@ -1,88 +1,111 @@
 # FIAP Bank - Plataforma de Crédito 💳
 
-Microsserviço de **Esteira e Motor de Decisão de Crédito** do FIAP Bank. Responsável por processar propostas de crédito, avaliar regras de negócio e risco, comunicar-se com o Core Bancário via **Spring Cloud OpenFeign**, simular verificações no SCR (Banco Central) e Bureau de Crédito (Serasa/SPC), e notificar clientes.
+Microsserviço de **Esteira e Motor de Decisão de Crédito** do FIAP Bank, responsável pelo processamento de propostas de crédito, aplicação das regras de negócio, análise de risco e comunicação com o Core Bancário.
 
-A API foi projetada de forma que todas as operações utilizeßm o método HTTP `POST` com verbos de ação semânticos no path.
+O projeto foi refatorado seguindo os princípios de **Domain-Driven Design (DDD)**, com separação em módulos Maven e disponibilização de uma API RESTful versionada em `/api/v1`.
+
+Para garantir a retrocompatibilidade, a aplicação também mantém os endpoints legados, permitindo que clientes existentes continuem funcionando durante a migração.
 
 ---
 
 ## 🛠️ Tecnologias Utilizadas
 
-- **Java 21**
-- **Spring Boot 4.1**
-- **Spring Cloud OpenFeign 2024.0.0** (comunicação declarativa com o Core Bancário)
-- **Spring Data JPA**
-- **Spring Boot Actuator**
-- **H2 Database** (em memória)
-- **Maven**
+- Java 21
+- Spring Boot 4.1
+- Spring Web
+- Spring Data JPA
+- Spring RestClient para comunicação com o Core Bancário
+- Spring Boot Actuator
+- H2 Database
+- Maven
+- JUnit e Mockito para testes
+
+---
+
+## 🏗️ Arquitetura DDD
+
+A Plataforma de Crédito está organizada em quatro módulos Maven:
+
+| Módulo | Responsabilidade |
+|---|---|
+| `fiap-bank-plataforma-credito-domain` | Entidades de domínio, regras de negócio e contratos de repositórios |
+| `fiap-bank-plataforma-credito-application` | Casos de uso, serviços e DTOs |
+| `fiap-bank-plataforma-credito-infrastructure` | Persistência JPA e integração HTTP com o Core Bancário |
+| `fiap-bank-plataforma-credito-presentation` | Controllers REST, controllers legados e inicialização da aplicação |
+
+Essa organização permite separar as responsabilidades e reduzir o acoplamento entre as camadas.
 
 ---
 
 ## 📋 Pré-requisitos
 
-- **Java JDK 21** instalado e configurado no `PATH`.
-- **Apache Maven 3.9+** instalado.
-- *(Opcional)* Serviço **Core Bancário** rodando na porta `8080` (caso indisponível, o cliente Feign utiliza dados de fallback automaticamente).
+- Java JDK 21
+- Apache Maven 3.9+
+- Core Bancário disponível na porta `8080` para operações que dependem da integração
+
+A Plataforma de Crédito utiliza a porta `8081`.
 
 ---
 
-## 🚀 Como Executar a Aplicação
+## 🚀 Como Compilar e Executar
 
-### 1. Compilar o projeto
-
-Na raiz do diretório `fiap-bank-plataforma-credito`:
+Na pasta raiz do projeto `fiap-bank-plataforma-credito`, execute:
 
 ```bash
-mvn clean compile
+mvn clean install
 ```
 
-### 2. Iniciar a aplicação via Maven
+Para iniciar a aplicação, execute:
 
 ```bash
-mvn spring-boot:run
+mvn spring-boot:run -pl fiap-bank-plataforma-credito-presentation -am
 ```
 
-### 3. Executar via arquivo JAR
+A aplicação estará disponível em:
 
-Para gerar o pacote e executar:
+`http://localhost:8081`
+
+Para executar os testes:
 
 ```bash
-mvn clean package -DskipTests
-java -jar target/fiap-bank-plataforma-credito-1.0.0-SNAPSHOT.jar
+mvn test
 ```
 
-A aplicação estará acessível em: **`http://localhost:8081`**
+---
+
+## ⚙️ Configuração
+
+| Propriedade | Valor padrão | Descrição |
+|---|---|---|
+| `server.port` | `8081` | Porta da Plataforma de Crédito |
+| `core.bancario.url` | `http://localhost:8080/api/v1` | URL base do Core Bancário |
+
+As configurações podem ser ajustadas conforme o ambiente de execução.
 
 ---
 
-## ⚙️ Variáveis de Ambiente e Configuração
+## 🌐 APIs RESTful
 
-As seguintes propriedades podem ser customizadas no arquivo `src/main/resources/application.yml` ou passadas como variáveis de ambiente:
+A Plataforma de Crédito disponibiliza endpoints RESTful versionados em `/api/v1`.
 
-| Propriedade | Variável de Ambiente | Valor Padrão | Descrição |
-| :--- | :--- | :--- | :--- |
-| `server.port` | `SERVER_PORT` | `8081` | Porta HTTP da aplicação |
-| `core.bancario.url` | `CORE_BANCARIO_URL` | `http://localhost:8080/api/v1` | URL base da API do Core Bancário |
+A API utiliza métodos HTTP apropriados para operações de criação, consulta e atualização de solicitações de crédito.
 
----
-
-## 🗄️ Console do Banco de Dados H2
-
-- **URL:** `http://localhost:8081/h2-console`
-- **JDBC URL:** `jdbc:h2:mem:plataformacreditodb`
-- **User Name:** `sa`
-- **Password:** *(deixe em branco)*
+Os controllers RESTful coexistem com os controllers legados, permitindo uma migração gradual das aplicações clientes.
 
 ---
 
-## 🌐 Endpoints Non-RESTful (All POST)
+## 🔄 Endpoints Legados (Compatibilidade)
 
-Base URL: `http://localhost:8081/api/credito`
+Os endpoints abaixo pertencem à API original da Plataforma de Crédito.
 
-### 1. Solicitar Crédito (Ação: `solicitarCredito`)
-Envia uma nova proposta para o motor de risco de crédito.
-- **Endpoint:** `POST /api/credito/solicitarCredito`
-- **Exemplo de Body:**
+Eles continuam documentados para preservar a compatibilidade com clientes que utilizam rotas orientadas a ações e o método HTTP `POST`.
+
+**URL base:** `http://localhost:8081/api/credito`
+
+### 1. Solicitar Crédito
+
+**Endpoint:** `POST /api/credito/solicitarCredito`
+
 ```json
 {
   "cpfCliente": "12345678900",
@@ -94,33 +117,40 @@ Envia uma nova proposta para o motor de risco de crédito.
 }
 ```
 
-### 2. Consultar Status por CPF (Ação: `consultarStatusCredito`)
-Consulta todas as solicitações de um cliente informado pelo corpo da requisição.
-- **Endpoint:** `POST /api/credito/consultarStatusCredito`
-- **Exemplo de Body:**
+### 2. Consultar Status por CPF
+
+**Endpoint:** `POST /api/credito/consultarStatusCredito`
+
 ```json
 {
   "cpfCliente": "12345678900"
 }
 ```
 
-### 3. Listar Todas as Solicitações (Ação: `listarTodasSolicitacoes`)
-Retorna todas as propostas para acompanhamento pela Mesa de Operações.
-- **Endpoint:** `POST /api/credito/listarTodasSolicitacoes`
-- **Body:** `{}` *(ou vazio)*
+### 3. Listar Todas as Solicitações
 
-### 4. Buscar Solicitação por ID (Ação: `buscarSolicitacaoPorId`)
-- **Endpoint:** `POST /api/credito/buscarSolicitacaoPorId`
-- **Exemplo de Body:**
+**Endpoint:** `POST /api/credito/listarTodasSolicitacoes`
+
+Corpo da requisição:
+
+```json
+{}
+```
+
+### 4. Buscar Solicitação por ID
+
+**Endpoint:** `POST /api/credito/buscarSolicitacaoPorId`
+
 ```json
 {
   "id": 1
 }
 ```
 
-### 5. Aprovar Solicitação (Ação: `aprovarSolicitacao`)
-- **Endpoint:** `POST /api/credito/aprovarSolicitacao`
-- **Exemplo de Body:**
+### 5. Aprovar Solicitação
+
+**Endpoint:** `POST /api/credito/aprovarSolicitacao`
+
 ```json
 {
   "id": 1,
@@ -128,9 +158,10 @@ Retorna todas as propostas para acompanhamento pela Mesa de Operações.
 }
 ```
 
-### 6. Reprovar Solicitação (Ação: `reprovarSolicitacao`)
-- **Endpoint:** `POST /api/credito/reprovarSolicitacao`
-- **Exemplo de Body:**
+### 6. Reprovar Solicitação
+
+**Endpoint:** `POST /api/credito/reprovarSolicitacao`
+
 ```json
 {
   "id": 1,
@@ -138,12 +169,64 @@ Retorna todas as propostas para acompanhamento pela Mesa de Operações.
 }
 ```
 
-### 7. Consultar Cliente no Core Bancário (Ação: `consultarClienteCore`)
-Executa a chamada direta ao Core Bancário via Spring Cloud OpenFeign.
-- **Endpoint:** `POST /api/credito/consultarClienteCore`
-- **Exemplo de Body:**
+### 7. Consultar Cliente no Core Bancário
+
+**Endpoint:** `POST /api/credito/consultarClienteCore`
+
 ```json
 {
   "cpfCliente": "12345678900"
 }
 ```
+
+---
+
+## 🔗 Integração com o Core Bancário
+
+A Plataforma de Crédito se comunica com o Core Bancário por meio de um adaptador de infraestrutura baseado em Spring `RestClient`.
+
+Essa integração permite consultar informações bancárias necessárias ao processamento das propostas de crédito.
+
+O Core Bancário disponibiliza sua API na porta `8080`, utilizando rotas versionadas em `/api/v1`.
+
+---
+
+## 🧪 Testes
+
+O projeto utiliza JUnit, Mockito e ferramentas de teste do Spring para validar o comportamento dos componentes.
+
+Entre os testes existentes estão:
+
+- Testes do controller REST de crédito.
+- Testes de requisições HTTP utilizando MockMvc.
+- Testes do adaptador de integração com o Core Bancário.
+
+Para executar a suíte de testes:
+
+```bash
+mvn test
+```
+
+---
+
+## 🔐 Compatibilidade com Aplicações Legadas
+
+A estratégia de migração adotada consiste em manter os contratos antigos enquanto a API RESTful é disponibilizada.
+
+Os controllers legados atuam como pontos de compatibilidade, permitindo que aplicações existentes continuem utilizando suas rotas originais.
+
+Essa abordagem reduz o risco de interrupções durante a refatoração e possibilita a atualização gradual dos consumidores da API.
+
+---
+
+## 👥 Integrantes
+
+- Arthur Araujo Tenório — RM: 562272
+- Breno Gonçalves Báo — RM: 564037
+- Vinicius Cavalcanti dos Reis — RM: 562063
+
+---
+
+## 📚 Projeto Acadêmico
+
+Projeto desenvolvido para o **Checkpoint 5 — FIAP Bank: Plataforma de Concessão de Crédito**, com foco em arquitetura DDD, APIs RESTful, persistência, validação, testes e retrocompatibilidade.
