@@ -46,7 +46,10 @@
 
     <build>
         <plugins>
-            <!-- Quando existir a classe @SpringBootApplication, adicione aqui o spring-boot-maven-plugin -->
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
 
             <!-- presentation so declara application; domain/infrastructure chegam apenas de forma transitiva -->
             <plugin>
