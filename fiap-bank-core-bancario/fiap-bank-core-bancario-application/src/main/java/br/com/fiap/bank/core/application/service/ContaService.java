@@ -1,3 +1,4 @@
+
 package br.com.fiap.bank.core.application.service;
 
 import br.com.fiap.bank.core.application.dto.AtualizarSaldoRequest;
@@ -35,27 +36,45 @@ public class ContaService {
     public ContaResponse abrirComNumero(CriarContaRequest request, String numeroDesejado) {
         return TradutorDeErros.executar(() -> {
             Cpf cpf = Cpf.of(request.cpfCliente());
+
             Cliente cliente = clienteRepository.buscarPorCpf(cpf)
-                    .orElseThrow(() -> new RequisicaoInvalidaException("Cliente nao encontrado para o CPF " + cpf));
+                    .orElseThrow(() -> new RequisicaoInvalidaException(
+                            "Cliente nao encontrado para o CPF " + cpf));
 
             if (cliente.getConta() != null && cliente.getConta().estaAtiva()) {
-                throw new ConflitoException("O cliente " + cpf + " ja possui uma conta ativa");
+                throw new ConflitoException(
+                        "O cliente " + cpf + " ja possui uma conta ativa");
             }
 
-            String numero = numeroDesejado != null ? numeroDesejado : gerarNumeroLivre();
+            String numero = numeroDesejado != null
+                    ? numeroDesejado
+                    : gerarNumeroLivre();
+
             if (numeroDesejado != null && contaRepository.existePorNumero(numero)) {
-                throw new ConflitoException("Ja existe conta com o numero " + numero);
+                throw new ConflitoException(
+                        "Ja existe conta com o numero " + numero);
             }
 
-            Conta conta = Conta.abrir(numero, request.agencia(), request.tipoConta(), cpf, request.saldoInicial());
+            Conta conta = Conta.abrir(
+                    numero,
+                    request.agencia(),
+                    request.tipoConta(),
+                    cpf,
+                    request.saldoInicial()
+            );
+
             cliente.vincularConta(conta);
+
             return ContaResponse.de(contaRepository.salvar(conta));
         });
     }
 
     @Transactional(readOnly = true)
     public List<ContaResponse> listar() {
-        return contaRepository.listarTodas().stream().map(ContaResponse::de).toList();
+        return contaRepository.listarTodas()
+                .stream()
+                .map(ContaResponse::de)
+                .toList();
     }
 
     @Transactional(readOnly = true)
@@ -67,21 +86,29 @@ public class ContaService {
     public ContaResponse buscarPorCpfTitular(String cpf) {
         return TradutorDeErros.executar(() -> {
             Cpf documento = Cpf.of(cpf);
+
             return contaRepository.buscarPorCpfTitular(documento)
                     .map(ContaResponse::de)
-                    .orElseThrow(() -> new RecursoNaoEncontradoException("Nenhuma conta encontrada para o CPF " + documento));
+                    .orElseThrow(() -> new RecursoNaoEncontradoException(
+                            "Nenhuma conta encontrada para o CPF " + documento));
         });
     }
 
     @Transactional
     public ContaResponse atualizarSaldo(String numeroConta, AtualizarSaldoRequest request) {
         Conta conta = obterPorNumero(numeroConta);
+
         return TradutorDeErros.executar(() -> {
             if ("DEPOSITO".equalsIgnoreCase(request.operacao())) {
                 conta.depositar(request.valor());
-            } else {
+            } else if ("SAQUE".equalsIgnoreCase(request.operacao())) {
                 conta.sacar(request.valor());
+            } else {
+                throw new RequisicaoInvalidaException(
+                        "Operacao invalida: utilize DEPOSITO ou SAQUE"
+                );
             }
+
             return ContaResponse.de(contaRepository.salvar(conta));
         });
     }
@@ -96,15 +123,20 @@ public class ContaService {
 
     private Conta obterPorNumero(String numeroConta) {
         return contaRepository.buscarPorNumero(numeroConta)
-                .orElseThrow(() -> new RecursoNaoEncontradoException("Conta nao encontrada: " + numeroConta));
+                .orElseThrow(() -> new RecursoNaoEncontradoException(
+                        "Conta nao encontrada: " + numeroConta));
     }
 
     private String gerarNumeroLivre() {
         String numero;
+
         do {
             ThreadLocalRandom random = ThreadLocalRandom.current();
-            numero = random.nextInt(10000, 100000) + "-" + random.nextInt(10);
+            numero = random.nextInt(10000, 100000)
+                    + "-"
+                    + random.nextInt(10);
         } while (contaRepository.existePorNumero(numero));
+
         return numero;
     }
 }

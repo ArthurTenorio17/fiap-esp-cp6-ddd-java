@@ -1,3 +1,4 @@
+
 package br.com.fiap.bank.core.application;
 
 import br.com.fiap.bank.core.application.dto.AtualizarSaldoRequest;
@@ -44,22 +45,41 @@ class ContaServiceTest {
     ContaService service;
 
     private Cliente cliente() {
-        return Cliente.cadastrar(Cpf.of("12345678900"), "Ana Silva", Email.of("ana@fiap.com.br"),
-                LocalDate.of(1995, 5, 10), new BigDecimal("7500.00"));
+        return Cliente.cadastrar(
+                Cpf.of("12345678900"),
+                "Ana Silva",
+                Email.of("ana@fiap.com.br"),
+                LocalDate.of(1995, 5, 10),
+                new BigDecimal("7500.00")
+        );
     }
 
     private CriarContaRequest pedidoDeConta() {
-        return new CriarContaRequest("12345678900", null, TipoConta.CORRENTE, new BigDecimal("100.00"));
+        return new CriarContaRequest(
+                "12345678900",
+                null,
+                TipoConta.CORRENTE,
+                new BigDecimal("100.00")
+        );
     }
 
     private Conta contaAtiva(String saldo) {
-        return Conta.abrir("12345-6", "0001", TipoConta.CORRENTE, Cpf.of("12345678900"), new BigDecimal(saldo));
+        return Conta.abrir(
+                "12345-6",
+                "0001",
+                TipoConta.CORRENTE,
+                Cpf.of("12345678900"),
+                new BigDecimal(saldo)
+        );
     }
 
     @Test
     void abreContaComAgenciaPadraoEVinculaAoCliente() {
-        when(clienteRepository.buscarPorCpf(any())).thenReturn(Optional.of(cliente()));
-        when(contaRepository.salvar(any(Conta.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(clienteRepository.buscarPorCpf(any()))
+                .thenReturn(Optional.of(cliente()));
+
+        when(contaRepository.salvar(any(Conta.class)))
+                .thenAnswer(inv -> inv.getArgument(0));
 
         ContaResponse resposta = service.abrir(pedidoDeConta());
 
@@ -71,9 +91,14 @@ class ContaServiceTest {
 
     @Test
     void abrirParaClienteInexistenteEhRejeitado() {
-        when(clienteRepository.buscarPorCpf(any())).thenReturn(Optional.empty());
+        when(clienteRepository.buscarPorCpf(any()))
+                .thenReturn(Optional.empty());
 
-        assertThrows(RequisicaoInvalidaException.class, () -> service.abrir(pedidoDeConta()));
+        assertThrows(
+                RequisicaoInvalidaException.class,
+                () -> service.abrir(pedidoDeConta())
+        );
+
         verify(contaRepository, never()).salvar(any());
     }
 
@@ -81,52 +106,129 @@ class ContaServiceTest {
     void clienteComContaAtivaGeraConflito() {
         Cliente comConta = cliente();
         comConta.vincularConta(contaAtiva("10"));
-        when(clienteRepository.buscarPorCpf(any())).thenReturn(Optional.of(comConta));
 
-        assertThrows(ConflitoException.class, () -> service.abrir(pedidoDeConta()));
+        when(clienteRepository.buscarPorCpf(any()))
+                .thenReturn(Optional.of(comConta));
+
+        assertThrows(
+                ConflitoException.class,
+                () -> service.abrir(pedidoDeConta())
+        );
     }
 
     @Test
     void numeroDesejadoJaExistenteGeraConflito() {
-        when(clienteRepository.buscarPorCpf(any())).thenReturn(Optional.of(cliente()));
-        when(contaRepository.existePorNumero("12345-6")).thenReturn(true);
+        when(clienteRepository.buscarPorCpf(any()))
+                .thenReturn(Optional.of(cliente()));
 
-        assertThrows(ConflitoException.class, () -> service.abrirComNumero(pedidoDeConta(), "12345-6"));
+        when(contaRepository.existePorNumero("12345-6"))
+                .thenReturn(true);
+
+        assertThrows(
+                ConflitoException.class,
+                () -> service.abrirComNumero(
+                        pedidoDeConta(),
+                        "12345-6"
+                )
+        );
     }
 
     @Test
     void depositoESaqueSaoCaseInsensitive() {
         Conta conta = contaAtiva("100.00");
-        when(contaRepository.buscarPorNumero("12345-6")).thenReturn(Optional.of(conta));
-        when(contaRepository.salvar(any(Conta.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        service.atualizarSaldo("12345-6", new AtualizarSaldoRequest("deposito", new BigDecimal("50")));
-        ContaResponse resposta = service.atualizarSaldo("12345-6", new AtualizarSaldoRequest("SAQUE", new BigDecimal("30")));
+        when(contaRepository.buscarPorNumero("12345-6"))
+                .thenReturn(Optional.of(conta));
+
+        when(contaRepository.salvar(any(Conta.class)))
+                .thenAnswer(inv -> inv.getArgument(0));
+
+        service.atualizarSaldo(
+                "12345-6",
+                new AtualizarSaldoRequest(
+                        "deposito",
+                        new BigDecimal("50")
+                )
+        );
+
+        ContaResponse resposta = service.atualizarSaldo(
+                "12345-6",
+                new AtualizarSaldoRequest(
+                        "SAQUE",
+                        new BigDecimal("30")
+                )
+        );
 
         assertEquals(new BigDecimal("120.00"), resposta.saldo());
     }
 
     @Test
     void saqueAcimaDoSaldoLancaSaldoInsuficiente() {
-        when(contaRepository.buscarPorNumero("12345-6")).thenReturn(Optional.of(contaAtiva("10.00")));
+        when(contaRepository.buscarPorNumero("12345-6"))
+                .thenReturn(Optional.of(contaAtiva("10.00")));
 
-        assertThrows(ConflitoException.class,
-                () -> service.atualizarSaldo("12345-6", new AtualizarSaldoRequest("SAQUE", new BigDecimal("10.01"))));
+        assertThrows(
+                ConflitoException.class,
+                () -> service.atualizarSaldo(
+                        "12345-6",
+                        new AtualizarSaldoRequest(
+                                "SAQUE",
+                                new BigDecimal("10.01")
+                        )
+                )
+        );
+
+        verify(contaRepository, never()).salvar(any());
+    }
+
+    @Test
+    void operacaoInvalidaNaoPodeSerInterpretadaComoSaque() {
+        Conta conta = contaAtiva("100.00");
+
+        when(contaRepository.buscarPorNumero("12345-6"))
+                .thenReturn(Optional.of(conta));
+
+        assertThrows(
+                RequisicaoInvalidaException.class,
+                () -> service.atualizarSaldo(
+                        "12345-6",
+                        new AtualizarSaldoRequest(
+                                "TRANSFERENCIA",
+                                new BigDecimal("50.00")
+                        )
+                )
+        );
+
+        assertEquals(
+                new BigDecimal("100.00"),
+                ContaResponse.de(conta).saldo()
+        );
+
         verify(contaRepository, never()).salvar(any());
     }
 
     @Test
     void contaInexistenteLancaNaoEncontrado() {
-        when(contaRepository.buscarPorNumero("0-0")).thenReturn(Optional.empty());
+        when(contaRepository.buscarPorNumero("0-0"))
+                .thenReturn(Optional.empty());
 
-        assertThrows(RecursoNaoEncontradoException.class, () -> service.buscarPorNumero("0-0"));
-        assertThrows(RecursoNaoEncontradoException.class, () -> service.encerrar("0-0"));
+        assertThrows(
+                RecursoNaoEncontradoException.class,
+                () -> service.buscarPorNumero("0-0")
+        );
+
+        assertThrows(
+                RecursoNaoEncontradoException.class,
+                () -> service.encerrar("0-0")
+        );
     }
 
     @Test
     void encerrarMarcaStatusEPersiste() {
         Conta conta = contaAtiva("10.00");
-        when(contaRepository.buscarPorNumero("12345-6")).thenReturn(Optional.of(conta));
+
+        when(contaRepository.buscarPorNumero("12345-6"))
+                .thenReturn(Optional.of(conta));
 
         service.encerrar("12345-6");
 
