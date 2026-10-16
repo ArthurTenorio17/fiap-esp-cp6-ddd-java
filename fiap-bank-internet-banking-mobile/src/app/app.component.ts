@@ -1,8 +1,13 @@
+
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CreditoService } from './services/credito.service';
-import { ClienteCoreInfo, SolicitacaoCreditoResponse, TransacaoExtrato } from './models/credito.model';
+import {
+  ClienteCoreInfo,
+  SolicitacaoCreditoResponse,
+  TransacaoExtrato
+} from './models/credito.model';
 
 @Component({
   selector: 'app-root',
@@ -18,12 +23,12 @@ export class AppComponent implements OnInit {
   feedbackMessage: string | null = null;
   feedbackType: 'success' | 'warning' | 'error' = 'success';
 
-  // Customer State
+  // Dados do cliente
   cpfCliente: string = '12345678900';
   nomeCliente: string = 'Ana Silva';
   rendaMensal: number = 7500;
 
-  // Core Bank Account Info
+  // Informacoes da conta bancaria
   contaInfo: ClienteCoreInfo = {
     statusConta: 'ATIVA',
     saldo: 12500.00,
@@ -31,24 +36,46 @@ export class AppComponent implements OnInit {
     numeroConta: '12345-6'
   };
 
-  // Form Credit Request State
+  // Dados do formulario de credito
   selectedTipoCredito: string = 'EMPRÉSTIMO PESSOAL';
   valorSolicitado: number = 15000;
   quantidadeParcelas: number = 24;
 
-  // Credit Types List
+  // Tipos de credito disponiveis
   tiposCredito = [
-    { id: 'EMPRÉSTIMO PESSOAL', nome: 'Empréstimo Pessoal', taxa: '1.49% a.m.', icone: 'fa-user-tag' },
-    { id: 'CRÉDITO IMOBILIÁRIO', nome: 'Crédito Imobiliário', taxa: '0.85% a.m.', icone: 'fa-house-chimney' },
-    { id: 'CRÉDITO AUTOMOTIVO', nome: 'Financiamento Auto', taxa: '1.19% a.m.', icone: 'fa-car' },
-    { id: 'CONSIGNADO', nome: 'Consignado FIAP', taxa: '0.99% a.m.', icone: 'fa-file-signature' }
+    {
+      id: 'EMPRÉSTIMO PESSOAL',
+      nome: 'Empréstimo Pessoal',
+      taxa: '1.49% a.m.',
+      icone: 'fa-user-tag'
+    },
+    {
+      id: 'CRÉDITO IMOBILIÁRIO',
+      nome: 'Crédito Imobiliário',
+      taxa: '0.85% a.m.',
+      icone: 'fa-house-chimney'
+    },
+    {
+      id: 'CRÉDITO AUTOMOTIVO',
+      nome: 'Financiamento Auto',
+      taxa: '1.19% a.m.',
+      icone: 'fa-car'
+    },
+    {
+      id: 'CONSIGNADO',
+      nome: 'Consignado FIAP',
+      taxa: '0.99% a.m.',
+      icone: 'fa-file-signature'
+    }
   ];
 
-  // Solicitacoes List
+  // Historico de solicitacoes de credito
   solicitacoes: SolicitacaoCreditoResponse[] = [];
 
-  // Extrato de Movimentacoes
+  // Extrato demonstrativo
+  // Estes registros ainda sao exemplos e nao movimentacoes consultadas na API.
   filtroExtrato: 'TODAS' | 'ENTRADAS' | 'SAIDAS' = 'TODAS';
+
   transacoes: TransacaoExtrato[] = [
     {
       id: 'TX-901',
@@ -103,13 +130,17 @@ export class AppComponent implements OnInit {
         }
       },
       error: (err) => {
-        console.error('Erro ao consultar dados no Core Bancário via Plataforma:', err);
+        console.error(
+          'Erro ao consultar dados no Core Bancário via Plataforma:',
+          err
+        );
       }
     });
   }
 
   carregarSolicitacoes(): void {
     this.loading = true;
+
     this.creditoService.consultarStatus(this.cpfCliente).subscribe({
       next: (data) => {
         this.solicitacoes = data || [];
@@ -127,9 +158,11 @@ export class AppComponent implements OnInit {
     if (this.filtroExtrato === 'ENTRADAS') {
       return this.transacoes.filter(t => t.tipo === 'ENTRADA');
     }
+
     if (this.filtroExtrato === 'SAIDAS') {
       return this.transacoes.filter(t => t.tipo === 'SAIDA');
     }
+
     return this.transacoes;
   }
 
@@ -146,12 +179,23 @@ export class AppComponent implements OnInit {
   }
 
   get parcelaEstimada(): number {
-    if (!this.quantidadeParcelas || this.quantidadeParcelas <= 0) return 0;
+    if (!this.quantidadeParcelas || this.quantidadeParcelas <= 0) {
+      return 0;
+    }
+
     const taxaMes = this.getTaxaDecimal();
     const pv = this.valorSolicitado;
     const n = this.quantidadeParcelas;
-    if (taxaMes === 0) return pv / n;
-    return (pv * taxaMes * Math.pow(1 + taxaMes, n)) / (Math.pow(1 + taxaMes, n) - 1);
+
+    if (taxaMes === 0) {
+      return pv / n;
+    }
+
+    return (
+      pv * taxaMes * Math.pow(1 + taxaMes, n)
+    ) / (
+      Math.pow(1 + taxaMes, n) - 1
+    );
   }
 
   get totalPagar(): number {
@@ -160,17 +204,25 @@ export class AppComponent implements OnInit {
 
   getTaxaDecimal(): number {
     switch (this.selectedTipoCredito) {
-      case 'CRÉDITO IMOBILIÁRIO': return 0.0085;
-      case 'CRÉDITO AUTOMOTIVO': return 0.0119;
-      case 'CONSIGNADO': return 0.0099;
-      default: return 0.0149;
+      case 'CRÉDITO IMOBILIÁRIO':
+        return 0.0085;
+
+      case 'CRÉDITO AUTOMOTIVO':
+        return 0.0119;
+
+      case 'CONSIGNADO':
+        return 0.0099;
+
+      default:
+        return 0.0149;
     }
   }
 
   solicitarCredito(): void {
     if (!this.valorSolicitado || this.valorSolicitado <= 0) {
       this.feedbackType = 'error';
-      this.feedbackMessage = 'Por favor, informe um valor desejado válido para o crédito.';
+      this.feedbackMessage =
+        'Por favor, informe um valor desejado válido para o crédito.';
       return;
     }
 
@@ -189,35 +241,39 @@ export class AppComponent implements OnInit {
     this.creditoService.solicitarCredito(payload).subscribe({
       next: (res) => {
         this.loading = false;
+
         if (res.status === 'APROVADO') {
           this.feedbackType = 'success';
-          this.feedbackMessage = `Crédito de R$ ${this.valorSolicitado.toLocaleString('pt-BR')} APROVADO com sucesso!`;
-          
-          // Adiciona lancamento no extrato
-          this.transacoes.unshift({
-            id: `TX-${Math.floor(Math.random() * 900) + 100}`,
-            descricao: `Crédito ${res.tipoCredito} Aprovado`,
-            tipo: 'ENTRADA',
-            categoria: 'CREDITO',
-            valor: res.valorSolicitado,
-            data: new Date().toISOString(),
-            icone: 'fa-hand-holding-dollar text-primary'
-          });
-          this.contaInfo.saldo += res.valorSolicitado;
+          this.feedbackMessage =
+            `Crédito de R$ ${this.valorSolicitado.toLocaleString('pt-BR')} APROVADO com sucesso!`;
+
+          // A aprovacao nao altera o saldo bancario.
+          // O saldo deve continuar sendo consultado no Core Bancario.
+
         } else if (res.status === 'EM_ANALISE') {
           this.feedbackType = 'warning';
-          this.feedbackMessage = `Sua solicitação de R$ ${this.valorSolicitado.toLocaleString('pt-BR')} foi encaminhada para a Mesa de Operações.`;
+          this.feedbackMessage =
+            `Sua solicitação de R$ ${this.valorSolicitado.toLocaleString('pt-BR')} foi encaminhada para a Mesa de Operações.`;
+
         } else {
           this.feedbackType = 'error';
-          this.feedbackMessage = `Solicitação não aprovada: ${res.parecerOperador}`;
+          this.feedbackMessage =
+            `Solicitação não aprovada: ${res.parecerOperador}`;
         }
+
         this.carregarSolicitacoes();
-        setTimeout(() => this.activeTab = 'historico', 1500);
+
+        setTimeout(() => {
+          this.activeTab = 'historico';
+        }, 1500);
       },
+
       error: (err) => {
         this.loading = false;
         this.feedbackType = 'error';
-        this.feedbackMessage = 'Erro ao processar solicitação na Plataforma de Crédito. Verifique se o servidor backend está online.';
+        this.feedbackMessage =
+          'Erro ao processar solicitação na Plataforma de Crédito. Verifique se o servidor backend está online.';
+
         console.error('Erro na solicitação de crédito:', err);
       }
     });
@@ -231,8 +287,11 @@ export class AppComponent implements OnInit {
     this.hideBalance = !this.hideBalance;
   }
 
-  setTab(tab: 'home' | 'credito' | 'extrato' | 'historico' | 'core'): void {
+  setTab(
+    tab: 'home' | 'credito' | 'extrato' | 'historico' | 'core'
+  ): void {
     this.activeTab = tab;
+
     if (tab === 'historico') {
       this.carregarSolicitacoes();
     }
