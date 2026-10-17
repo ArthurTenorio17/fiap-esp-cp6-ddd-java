@@ -57,6 +57,31 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
             </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>presentation-sem-acesso-direto-camadas-internas</id>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <bannedDependencies>
+                                    <searchTransitive>false</searchTransitive>
+                                    <excludes>
+                                        <exclude>br.com.fiap.bank:fiap-bank-plataforma-credito-domain</exclude>
+                                        <exclude>br.com.fiap.bank:fiap-bank-plataforma-credito-infrastructure</exclude>
+                                    </excludes>
+                                    <message>A camada Presentation deve acessar as funcionalidades por meio da Application, sem dependencias diretas de Domain ou Infrastructure.</message>
+                                </bannedDependencies>
+                            </rules>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
 
