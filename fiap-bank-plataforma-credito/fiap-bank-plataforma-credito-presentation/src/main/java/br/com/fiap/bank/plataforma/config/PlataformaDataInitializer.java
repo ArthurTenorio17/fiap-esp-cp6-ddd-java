@@ -1,7 +1,7 @@
 package br.com.fiap.bank.plataforma.config;
 
-import br.com.fiap.bank.plataforma.dto.SolicitarCreditoRequest;
-import br.com.fiap.bank.plataforma.service.PlataformaCreditoService;
+import br.com.fiap.bank.plataforma.application.dto.SolicitarCreditoRequest;
+import br.com.fiap.bank.plataforma.application.service.PlataformaCreditoService;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
@@ -19,7 +19,6 @@ public class PlataformaDataInitializer implements CommandLineRunner {
     @Override
     public void run(String... args) {
         try {
-            // Seed sample requests
             plataformaService.solicitarCredito(new SolicitarCreditoRequest(
                     "12345678900",
                     "Ana Silva",
@@ -47,9 +46,15 @@ public class PlataformaDataInitializer implements CommandLineRunner {
                     new BigDecimal("4200.00")
             ));
 
-            System.out.println(">>> Plataforma de Credito: Dados iniciais carregados com sucesso!");
+            System.out.println(
+                    ">>> Plataforma de Credito: Dados iniciais carregados com sucesso!"
+            );
+
         } catch (Exception e) {
-            System.err.println(">>> Erro ao carregar dados na Plataforma de Credito: " + e.getMessage());
+            System.err.println(
+                    ">>> Erro ao carregar dados na Plataforma de Credito: "
+                            + e.getMessage()
+            );
         }
     }
 }
