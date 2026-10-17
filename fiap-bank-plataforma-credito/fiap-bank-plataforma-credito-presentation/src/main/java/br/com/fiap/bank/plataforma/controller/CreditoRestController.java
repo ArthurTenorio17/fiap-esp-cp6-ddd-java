@@ -14,7 +14,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1")
-@CrossOrigin(origins = "*")
+
 public class CreditoRestController {
 
     private final PlataformaCreditoService plataformaService;
@@ -70,10 +70,10 @@ public class CreditoRestController {
         );
     }
 
-    @PatchMapping("/solicitacoes/{id}/aprovacao")
+    @PutMapping("/solicitacoes/{id}/aprovacao")
     public ResponseEntity<SolicitacaoCreditoResponseDTO> aprovar(
             @PathVariable Long id,
-            @RequestBody AprovarSolicitacaoRequest request) {
+            @Valid @RequestBody AprovarSolicitacaoRequest request            ) {
 
         return ResponseEntity.ok(
                 plataformaService.aprovarSolicitacao(
@@ -85,10 +85,10 @@ public class CreditoRestController {
         );
     }
 
-    @PatchMapping("/solicitacoes/{id}/reprovacao")
+    @PutMapping("/solicitacoes/{id}/reprovacao")
     public ResponseEntity<SolicitacaoCreditoResponseDTO> reprovar(
             @PathVariable Long id,
-            @RequestBody ReprovarSolicitacaoRequest request) {
+            @Valid @RequestBody ReprovarSolicitacaoRequest request) {
 
         return ResponseEntity.ok(
                 plataformaService.reprovarSolicitacao(

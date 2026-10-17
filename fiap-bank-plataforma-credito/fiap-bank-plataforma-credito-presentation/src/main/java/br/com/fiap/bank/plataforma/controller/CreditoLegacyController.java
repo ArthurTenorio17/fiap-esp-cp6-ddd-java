@@ -1,18 +1,20 @@
+
 package br.com.fiap.bank.plataforma.controller;
 
 import br.com.fiap.bank.plataforma.application.dto.*;
 import br.com.fiap.bank.plataforma.application.service.PlataformaCreditoService;
 import br.com.fiap.bank.plataforma.domain.gateway.CoreBancarioGateway;
 
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
 
+@Deprecated
 @RestController
 @RequestMapping("/api/credito")
-@CrossOrigin(origins = "*")
 public class CreditoLegacyController {
 
     private final PlataformaCreditoService plataformaService;
@@ -28,7 +30,7 @@ public class CreditoLegacyController {
 
     @PostMapping("/solicitarCredito")
     public ResponseEntity<SolicitacaoCreditoResponseDTO> solicitarCredito(
-            @RequestBody SolicitarCreditoRequest request) {
+            @Valid @RequestBody SolicitarCreditoRequest request) {
 
         return ResponseEntity.ok(
                 plataformaService.solicitarCredito(request)
@@ -37,7 +39,7 @@ public class CreditoLegacyController {
 
     @PostMapping("/consultarStatusCredito")
     public ResponseEntity<List<SolicitacaoCreditoResponseDTO>> consultarStatusCredito(
-            @RequestBody ConsultarStatusRequest request) {
+            @Valid @RequestBody ConsultarStatusRequest request) {
 
         return ResponseEntity.ok(
                 plataformaService.consultarStatusPorCpf(request)
@@ -46,7 +48,7 @@ public class CreditoLegacyController {
 
     @PostMapping("/buscarSolicitacaoPorId")
     public ResponseEntity<SolicitacaoCreditoResponseDTO> buscarSolicitacaoPorId(
-            @RequestBody BuscarSolicitacaoRequest request) {
+            @Valid @RequestBody BuscarSolicitacaoRequest request) {
 
         return ResponseEntity.ok(
                 plataformaService.buscarPorId(request)
@@ -63,7 +65,7 @@ public class CreditoLegacyController {
 
     @PostMapping("/aprovarSolicitacao")
     public ResponseEntity<SolicitacaoCreditoResponseDTO> aprovarSolicitacao(
-            @RequestBody AprovarSolicitacaoRequest request) {
+            @Valid @RequestBody AprovarSolicitacaoRequest request) {
 
         return ResponseEntity.ok(
                 plataformaService.aprovarSolicitacao(request)
@@ -72,7 +74,7 @@ public class CreditoLegacyController {
 
     @PostMapping("/reprovarSolicitacao")
     public ResponseEntity<SolicitacaoCreditoResponseDTO> reprovarSolicitacao(
-            @RequestBody ReprovarSolicitacaoRequest request) {
+            @Valid @RequestBody ReprovarSolicitacaoRequest request) {
 
         return ResponseEntity.ok(
                 plataformaService.reprovarSolicitacao(request)
@@ -81,7 +83,7 @@ public class CreditoLegacyController {
 
     @PostMapping("/consultarClienteCore")
     public ResponseEntity<Map<String, Object>> consultarClienteCore(
-            @RequestBody ConsultarStatusRequest request) {
+            @Valid @RequestBody ConsultarStatusRequest request) {
 
         return ResponseEntity.ok(
                 coreBancarioGateway.consultarContaCliente(

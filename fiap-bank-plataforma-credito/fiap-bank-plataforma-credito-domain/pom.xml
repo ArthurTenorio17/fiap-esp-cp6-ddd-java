@@ -15,5 +15,39 @@
     <packaging>jar</packaging>
 
     <name>FIAP Bank - Plataforma de Credito - Domain</name>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>dominio-puro</id>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <bannedDependencies>
+                                    <searchTransitive>true</searchTransitive>
+                                    <excludes>
+                                        <exclude>org.springframework:*</exclude>
+                                        <exclude>org.springframework.*:*</exclude>
+                                        <exclude>org.hibernate*:*</exclude>
+                                        <exclude>jakarta.persistence:*</exclude>
+                                        <exclude>jakarta.validation:*</exclude>
+                                        <exclude>br.com.fiap.bank:fiap-bank-plataforma-credito-infrastructure</exclude>
+                                        <exclude>br.com.fiap.bank:fiap-bank-plataforma-credito-application</exclude>
+                                        <exclude>br.com.fiap.bank:fiap-bank-plataforma-credito-presentation</exclude>
+                                    </excludes>
+                                    <message>O modulo domain deve permanecer puro, sem Spring, JPA ou dependencias de camadas superiores.</message>
+                                </bannedDependencies>
+                            </rules>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 
 </project>
