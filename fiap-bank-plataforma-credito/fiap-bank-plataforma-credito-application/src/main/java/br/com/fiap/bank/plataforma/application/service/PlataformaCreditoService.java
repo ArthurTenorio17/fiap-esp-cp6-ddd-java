@@ -1,34 +1,34 @@
+
 package br.com.fiap.bank.plataforma.application.service;
 
-import br.com.fiap.bank.plataforma.domain.repository.SolicitacaoCreditoRepository;
-import br.com.fiap.bank.plataforma.domain.gateway.ScrGateway;
-import br.com.fiap.bank.plataforma.domain.gateway.BureauCreditoGateway;
-import br.com.fiap.bank.plataforma.domain.gateway.NotificacaoGateway;
-import br.com.fiap.bank.plataforma.domain.gateway.CoreBancarioGateway;
-import br.com.fiap.bank.plataforma.domain.exception.SolicitacaoNaoEncontradaException;
-
-import org.springframework.stereotype.Service;
-
-import br.com.fiap.bank.plataforma.application.dto.SolicitarCreditoRequest;
+import br.com.fiap.bank.plataforma.application.dto.AprovarSolicitacaoRequest;
+import br.com.fiap.bank.plataforma.application.dto.BuscarSolicitacaoRequest;
+import br.com.fiap.bank.plataforma.application.dto.ConsultarStatusRequest;
+import br.com.fiap.bank.plataforma.application.dto.ReprovarSolicitacaoRequest;
 import br.com.fiap.bank.plataforma.application.dto.SolicitacaoCreditoResponseDTO;
+import br.com.fiap.bank.plataforma.application.dto.SolicitarCreditoRequest;
+
+import br.com.fiap.bank.plataforma.domain.exception.SolicitacaoNaoEncontradaException;
+import br.com.fiap.bank.plataforma.domain.gateway.BureauCreditoGateway;
+import br.com.fiap.bank.plataforma.domain.gateway.CoreBancarioGateway;
+import br.com.fiap.bank.plataforma.domain.gateway.NotificacaoGateway;
+import br.com.fiap.bank.plataforma.domain.gateway.ScrGateway;
 import br.com.fiap.bank.plataforma.domain.model.SolicitacaoCredito;
 import br.com.fiap.bank.plataforma.domain.model.StatusSolicitacao;
+import br.com.fiap.bank.plataforma.domain.repository.SolicitacaoCreditoRepository;
 
+import lombok.RequiredArgsConstructor;
+
+import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
-
-import br.com.fiap.bank.plataforma.application.dto.ConsultarStatusRequest;
-import br.com.fiap.bank.plataforma.application.dto.BuscarSolicitacaoRequest;
-
 import java.util.List;
 
-import br.com.fiap.bank.plataforma.application.dto.AprovarSolicitacaoRequest;
-import br.com.fiap.bank.plataforma.application.dto.ReprovarSolicitacaoRequest;
-
 @Service
+@RequiredArgsConstructor
 public class PlataformaCreditoService {
 
     private final SolicitacaoCreditoRepository repository;
@@ -36,20 +36,6 @@ public class PlataformaCreditoService {
     private final BureauCreditoGateway bureauGateway;
     private final NotificacaoGateway notificacaoGateway;
     private final CoreBancarioGateway coreBancarioGateway;
-
-    public PlataformaCreditoService(
-            SolicitacaoCreditoRepository repository,
-            ScrGateway scrGateway,
-            BureauCreditoGateway bureauGateway,
-            NotificacaoGateway notificacaoGateway,
-            CoreBancarioGateway coreBancarioGateway
-    ) {
-        this.repository = repository;
-        this.scrGateway = scrGateway;
-        this.bureauGateway = bureauGateway;
-        this.notificacaoGateway = notificacaoGateway;
-        this.coreBancarioGateway = coreBancarioGateway;
-    }
 
     @Transactional
     public SolicitacaoCreditoResponseDTO solicitarCredito(
@@ -158,7 +144,9 @@ public class PlataformaCreditoService {
         SolicitacaoCredito solicitacao = repository
                 .buscarPorId(request.solicitacaoId())
                 .orElseThrow(() ->
-                        new SolicitacaoNaoEncontradaException(request.solicitacaoId())
+                        new SolicitacaoNaoEncontradaException(
+                                request.solicitacaoId()
+                        )
                 );
 
         return SolicitacaoCreditoResponseDTO.fromEntity(solicitacao);
@@ -180,7 +168,9 @@ public class PlataformaCreditoService {
         SolicitacaoCredito solicitacao = repository
                 .buscarPorId(request.solicitacaoId())
                 .orElseThrow(() ->
-                        new SolicitacaoNaoEncontradaException(request.solicitacaoId())
+                        new SolicitacaoNaoEncontradaException(
+                                request.solicitacaoId()
+                        )
                 );
 
         String parecer = "Aprovado pela Mesa de Operacoes: "
@@ -209,7 +199,9 @@ public class PlataformaCreditoService {
         SolicitacaoCredito solicitacao = repository
                 .buscarPorId(request.solicitacaoId())
                 .orElseThrow(() ->
-                        new SolicitacaoNaoEncontradaException(request.solicitacaoId())
+                        new SolicitacaoNaoEncontradaException(
+                                request.solicitacaoId()
+                        )
                 );
 
         String parecer = "Reprovado pela Mesa de Operacoes. Motivo: "
@@ -230,5 +222,4 @@ public class PlataformaCreditoService {
 
         return SolicitacaoCreditoResponseDTO.fromEntity(salva);
     }
-
 }
