@@ -5,21 +5,18 @@ import br.com.fiap.bank.plataforma.domain.repository.SolicitacaoCreditoRepositor
 import br.com.fiap.bank.plataforma.infrastructure.persistence.mapper.SolicitacaoCreditoMapper;
 import br.com.fiap.bank.plataforma.infrastructure.persistence.repository.SolicitacaoCreditoJpaRepository;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
 
 @Repository
+@RequiredArgsConstructor
 public class SolicitacaoCreditoRepositoryAdapter
         implements SolicitacaoCreditoRepository {
 
     private final SolicitacaoCreditoJpaRepository jpaRepository;
-
-    public SolicitacaoCreditoRepositoryAdapter(
-            SolicitacaoCreditoJpaRepository jpaRepository) {
-        this.jpaRepository = jpaRepository;
-    }
 
     @Override
     public SolicitacaoCredito salvar(SolicitacaoCredito solicitacao) {

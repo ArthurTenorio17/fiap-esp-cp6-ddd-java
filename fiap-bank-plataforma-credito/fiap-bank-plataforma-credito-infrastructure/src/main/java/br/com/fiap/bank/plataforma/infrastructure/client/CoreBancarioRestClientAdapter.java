@@ -3,6 +3,7 @@ package br.com.fiap.bank.plataforma.infrastructure.client;
 import br.com.fiap.bank.plataforma.domain.gateway.CoreBancarioGateway;
 import br.com.fiap.bank.plataforma.domain.exception.CoreBancarioIndisponivelException;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
@@ -10,6 +11,7 @@ import org.springframework.web.client.RestClientException;
 
 import java.util.Map;
 
+@Slf4j
 @Component
 public class CoreBancarioRestClientAdapter implements CoreBancarioGateway {
 
@@ -44,6 +46,7 @@ public class CoreBancarioRestClientAdapter implements CoreBancarioGateway {
             return resposta;
 
         } catch (RestClientException e) {
+            log.warn("Core Bancario indisponivel ao consultar o CPF informado: {}", e.getMessage());
             throw new CoreBancarioIndisponivelException(
                     "Falha ao consultar a conta do cliente no Core Bancario.",
                     e
