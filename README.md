@@ -1,6 +1,16 @@
 
 # FIAP Bank - Esteira de Crédito 🏦💳
+----
+## 👥 Integrantes
 
+**Turma:** 2ESPG
+
+| Nome | RM |
+| :--- | :--- |
+| Arthur Araújo Tenório | 562272 |
+| Breno Gonçalves Báo | 564037 |
+| Vinicius Cavalcanti dos Reis | 562063 |
+-----
 Monorepo contendo o ecossistema da **Esteira de Crédito do FIAP Bank**, composto por quatro aplicações integradas:
 
 - Core Bancário
@@ -19,7 +29,7 @@ Cada aplicação possui seu próprio `README.md`, com informações sobre tecnol
 | Projeto | Tecnologia | Porta | Documentação |
 | :--- | :--- | :---: | :--- |
 | `fiap-bank-core-bancario` | Java 21, Spring Boot, JPA, DDD e Maven multimódulo | `8080` | [README do Core Bancário](./fiap-bank-core-bancario/README.md) |
-| `fiap-bank-plataforma-credito` | Java 21, Spring Boot e Spring Cloud OpenFeign | `8081` | [README da Plataforma de Crédito](./fiap-bank-plataforma-credito/README.md) |
+| `fiap-bank-plataforma-credito` | Java 21, Spring Boot, JPA, RestClient, DDD e Maven multimódulo | `8081` | [README da Plataforma de Crédito](./fiap-bank-plataforma-credito/README.md) |
 | `fiap-bank-mesa-operacoes-credito` | Java 21, Spring Boot, Thymeleaf e OpenFeign | `8082` | [README da Mesa de Operações](./fiap-bank-mesa-operacoes-credito/README.md) |
 | `fiap-bank-internet-banking-mobile` | Angular, TypeScript e CSS responsivo | `4200` | [README do Mobile Angular](./fiap-bank-internet-banking-mobile/README.md) |
 
@@ -39,8 +49,8 @@ Cada aplicação possui seu próprio `README.md`, com informações sobre tecnol
 
 Para executar o projeto, é necessário instalar:
 
-- **JDK 21**
-- **Apache Maven**
+- **JDK 21** (ou superior)
+- **Apache Maven 3.9+**
 - **Node.js e npm**
 - Navegador web atualizado
 - Git, para controle de versão
@@ -54,7 +64,7 @@ java -version
 mvn -version
 ```
 
-Os comandos devem indicar o uso do **Java 21**.
+Os comandos devem indicar o uso do **Java 21 ou superior**.
 
 ### Configuração do Java 21 no Git Bash
 
@@ -406,7 +416,9 @@ A interface Angular passou a identificar o extrato como demonstrativo, sem apres
 
 ## ⚠️ Observações Importantes
 
-- Os projetos Java devem ser executados com uma versão de JDK compatível, preferencialmente Java 21.
+- Os projetos Java exigem JDK 21 ou superior (o `maven-enforcer-plugin` bloqueia versões anteriores).
+- A Plataforma de Crédito acessa o Core Bancário via `RestClient`; a Mesa de Operações ainda usa Spring Cloud OpenFeign para chamar a Plataforma.
+- Os endpoints antigos `/api/credito/*` da Plataforma foram mantidos apenas por retrocompatibilidade com o Angular e a Mesa; novos clientes devem usar `/api/v1`.
 - O Core Bancário deve estar disponível antes das operações da Plataforma de Crédito que dependem de seus dados.
 - A Mesa de Operações depende da Plataforma de Crédito.
 - O Angular também depende da Plataforma de Crédito para os recursos integrados.
@@ -433,12 +445,16 @@ Projeto desenvolvido no contexto do **Checkpoint 5 da FIAP**, com foco em:
 
 - Java e Spring Boot;
 - Domain-Driven Design (DDD);
-- Arquitetura em módulos;
-- APIs REST;
-- Integração entre serviços;
-- Spring Cloud OpenFeign;
+- Arquitetura em módulos Maven (domain, infrastructure, application e presentation);
+- APIs RESTful versionadas, com Bean Validation e tratamento global de erros;
+- Persistência com Spring Data JPA;
+- Integração entre serviços (RestClient na Plataforma e OpenFeign na Mesa);
 - Interfaces web com Angular e Thymeleaf;
 - Testes automatizados;
 - Controle de versão com Git e GitHub.
+
+---
+
+---
 
 **FIAP Bank — Esteira de Crédito**
