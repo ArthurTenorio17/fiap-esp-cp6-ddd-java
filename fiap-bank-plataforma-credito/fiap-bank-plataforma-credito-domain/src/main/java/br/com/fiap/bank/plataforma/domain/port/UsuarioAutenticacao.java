@@ -7,5 +7,7 @@ public record UsuarioAutenticacao(
         String email,
         String senhaHash,
         String nome,
-        String perfil
+        String perfil,
+        String cpf,
+        String conta
 ) {}

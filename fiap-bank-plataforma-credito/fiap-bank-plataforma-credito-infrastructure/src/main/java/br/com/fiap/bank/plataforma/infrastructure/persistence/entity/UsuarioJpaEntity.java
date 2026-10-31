@@ -29,4 +29,10 @@ public class UsuarioJpaEntity {
     @Column(nullable = false, length = 30)
     private String perfil;
 
+    @Column(length = 11)
+    private String cpf;
+
+    @Column(length = 30)
+    private String conta;
+
 }

@@ -1,3 +1,4 @@
+
 package br.com.fiap.bank.plataforma.infrastructure.persistence.adapter;
 
 import br.com.fiap.bank.plataforma.domain.port.UsuarioAutenticacao;
@@ -24,7 +25,9 @@ public class UsuarioConsultaAdapter implements UsuarioConsultaPort {
                         usuario.getEmail(),
                         usuario.getSenha(),
                         usuario.getNome(),
-                        usuario.getPerfil()
+                        usuario.getPerfil(),
+                        usuario.getCpf(),
+                        usuario.getConta()
                 ));
     }
 }

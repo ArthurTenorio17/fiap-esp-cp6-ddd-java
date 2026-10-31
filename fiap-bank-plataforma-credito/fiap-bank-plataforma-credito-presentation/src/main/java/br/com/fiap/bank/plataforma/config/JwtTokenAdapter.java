@@ -1,3 +1,4 @@
+
 package br.com.fiap.bank.plataforma.config;
 
 import br.com.fiap.bank.plataforma.domain.port.TokenGeracaoPort;
@@ -34,14 +35,23 @@ public class JwtTokenAdapter implements TokenGeracaoPort {
 
         Instant agora = Instant.now();
 
-        JwtClaimsSet claims = JwtClaimsSet.builder()
+        JwtClaimsSet.Builder claimsBuilder = JwtClaimsSet.builder()
                 .issuer(issuer)
                 .issuedAt(agora)
                 .expiresAt(agora.plusSeconds(expiracaoMinutos * 60))
                 .subject(usuario.id().toString())
                 .claim("email", usuario.email())
-                .claim("perfil", usuario.perfil())
-                .build();
+                .claim("perfil", usuario.perfil());
+
+        if (usuario.cpf() != null && !usuario.cpf().isBlank()) {
+            claimsBuilder.claim("cpf", usuario.cpf());
+        }
+
+        if (usuario.conta() != null && !usuario.conta().isBlank()) {
+            claimsBuilder.claim("conta", usuario.conta());
+        }
+
+        JwtClaimsSet claims = claimsBuilder.build();
 
         JwsHeader header = JwsHeader.with(MacAlgorithm.HS256).build();
 
