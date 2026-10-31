@@ -73,6 +73,8 @@ public class GlobalExceptionHandler {
     public ResponseEntity<Map<String, Object>> tratarErroInterno(
             Exception ex) {
 
+        ex.printStackTrace();
+
         return resposta(
                 HttpStatus.INTERNAL_SERVER_ERROR,
                 "Ocorreu um erro interno no servidor."

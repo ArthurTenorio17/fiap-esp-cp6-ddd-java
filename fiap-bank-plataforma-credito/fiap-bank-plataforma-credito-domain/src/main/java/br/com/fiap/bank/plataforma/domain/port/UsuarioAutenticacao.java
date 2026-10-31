@@ -1,4 +1,4 @@
-package br.com.fiap.bank.plataforma.application.port;
+package br.com.fiap.bank.plataforma.domain.port;
 
 import java.util.UUID;
 

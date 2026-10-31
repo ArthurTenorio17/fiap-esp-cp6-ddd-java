@@ -49,7 +49,7 @@
             <artifactId>spring-boot-starter-oauth2-resource-server</artifactId>
         </dependency>
 
-        <!-- JWT - Assinatura e validacao -->
+        <!-- JWT -->
         <dependency>
             <groupId>org.springframework.security</groupId>
             <artifactId>spring-security-oauth2-jose</artifactId>
@@ -59,6 +59,13 @@
         <dependency>
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+
+        <!-- H2 Console -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-h2console</artifactId>
             <scope>runtime</scope>
         </dependency>
 
@@ -87,11 +94,13 @@
     <build>
         <plugins>
 
+            <!-- Spring Boot Maven Plugin -->
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
             </plugin>
 
+            <!-- Validacao da arquitetura em camadas -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-enforcer-plugin</artifactId>
@@ -109,7 +118,9 @@
                                         <exclude>br.com.fiap.bank:fiap-bank-plataforma-credito-domain</exclude>
                                         <exclude>br.com.fiap.bank:fiap-bank-plataforma-credito-infrastructure</exclude>
                                     </excludes>
-                                    <message>A camada Presentation deve acessar as funcionalidades por meio da Application, sem dependencias diretas de Domain ou Infrastructure.</message>
+                                    <message>
+                                        A camada Presentation deve acessar as funcionalidades por meio da Application, sem dependencias diretas de Domain ou Infrastructure.
+                                    </message>
                                 </bannedDependencies>
                             </rules>
                         </configuration>

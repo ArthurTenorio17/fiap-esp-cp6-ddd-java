@@ -1,4 +1,7 @@
 package br.com.fiap.bank.plataforma.domain.port;
 
-public class SenhaVerificacaoPort {
+public interface SenhaVerificacaoPort {
+
+    boolean verificar(String senhaInformada, String senhaHash);
+
 }
