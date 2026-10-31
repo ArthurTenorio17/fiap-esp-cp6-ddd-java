@@ -1,3 +1,4 @@
+
 package br.com.fiap.bank.plataforma.controller;
 
 import br.com.fiap.bank.plataforma.application.dto.*;
@@ -6,6 +7,8 @@ import br.com.fiap.bank.plataforma.domain.gateway.CoreBancarioGateway;
 
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.parameters.P;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
@@ -14,7 +17,6 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1")
-
 public class CreditoRestController {
 
     private final PlataformaCreditoService plataformaService;
@@ -22,16 +24,23 @@ public class CreditoRestController {
 
     public CreditoRestController(
             PlataformaCreditoService plataformaService,
-            CoreBancarioGateway coreBancarioGateway) {
-
+            CoreBancarioGateway coreBancarioGateway
+    ) {
         this.plataformaService = plataformaService;
         this.coreBancarioGateway = coreBancarioGateway;
     }
 
+    // Criar solicitacao de credito
+    // CLIENTE: somente para o proprio CPF
+    // OPERADOR e ADMIN: qualquer CPF
+    @PreAuthorize(
+            "hasAnyRole('CLIENTE', 'OPERADOR', 'ADMIN') " +
+                    "and @cpfAuthorizationService.podeAcessarCpf(#request.cpfCliente())"
+    )
     @PostMapping("/solicitacoes")
     public ResponseEntity<SolicitacaoCreditoResponseDTO> solicitarCredito(
-            @Valid @RequestBody SolicitarCreditoRequest request) {
-
+            @P("request") @Valid @RequestBody SolicitarCreditoRequest request
+    ) {
         SolicitacaoCreditoResponseDTO resposta =
                 plataformaService.solicitarCredito(request);
 
@@ -40,10 +49,15 @@ public class CreditoRestController {
                 .body(resposta);
     }
 
+    // Consultar solicitacoes por CPF
+    @PreAuthorize(
+            "hasAnyRole('CLIENTE', 'OPERADOR', 'ADMIN') " +
+                    "and @cpfAuthorizationService.podeAcessarCpf(#cpf)"
+    )
     @GetMapping(value = "/solicitacoes", params = "cpf")
     public ResponseEntity<List<SolicitacaoCreditoResponseDTO>> consultarPorCpf(
-            @RequestParam("cpf") String cpf) {
-
+            @P("cpf") @RequestParam("cpf") String cpf
+    ) {
         return ResponseEntity.ok(
                 plataformaService.consultarStatusPorCpf(
                         new ConsultarStatusRequest(cpf)
@@ -51,18 +65,23 @@ public class CreditoRestController {
         );
     }
 
+    // Listar todas as solicitacoes
+    // Somente OPERADOR e ADMIN
+    @PreAuthorize("hasAnyRole('OPERADOR', 'ADMIN')")
     @GetMapping(value = "/solicitacoes", params = "!cpf")
     public ResponseEntity<List<SolicitacaoCreditoResponseDTO>> listarTodas() {
-
         return ResponseEntity.ok(
                 plataformaService.listarTodasSolicitacoes()
         );
     }
 
+    // Buscar solicitacao por ID
+    // Somente OPERADOR e ADMIN
+    @PreAuthorize("hasAnyRole('OPERADOR', 'ADMIN')")
     @GetMapping("/solicitacoes/{id}")
     public ResponseEntity<SolicitacaoCreditoResponseDTO> buscarPorId(
-            @PathVariable Long id) {
-
+            @PathVariable Long id
+    ) {
         return ResponseEntity.ok(
                 plataformaService.buscarPorId(
                         new BuscarSolicitacaoRequest(id)
@@ -70,11 +89,14 @@ public class CreditoRestController {
         );
     }
 
+    // Aprovar solicitacao
+    // Somente OPERADOR e ADMIN
+    @PreAuthorize("hasAnyRole('OPERADOR', 'ADMIN')")
     @PutMapping("/solicitacoes/{id}/aprovacao")
     public ResponseEntity<SolicitacaoCreditoResponseDTO> aprovar(
             @PathVariable Long id,
-            @Valid @RequestBody AprovarSolicitacaoRequest request            ) {
-
+            @Valid @RequestBody AprovarSolicitacaoRequest request
+    ) {
         return ResponseEntity.ok(
                 plataformaService.aprovarSolicitacao(
                         new AprovarSolicitacaoRequest(
@@ -85,11 +107,14 @@ public class CreditoRestController {
         );
     }
 
+    // Reprovar solicitacao
+    // Somente OPERADOR e ADMIN
+    @PreAuthorize("hasAnyRole('OPERADOR', 'ADMIN')")
     @PutMapping("/solicitacoes/{id}/reprovacao")
     public ResponseEntity<SolicitacaoCreditoResponseDTO> reprovar(
             @PathVariable Long id,
-            @Valid @RequestBody ReprovarSolicitacaoRequest request) {
-
+            @Valid @RequestBody ReprovarSolicitacaoRequest request
+    ) {
         return ResponseEntity.ok(
                 plataformaService.reprovarSolicitacao(
                         new ReprovarSolicitacaoRequest(
@@ -100,10 +125,13 @@ public class CreditoRestController {
         );
     }
 
+    // Consultar conta do cliente no Core Bancario
+    // Somente OPERADOR e ADMIN
+    @PreAuthorize("hasAnyRole('OPERADOR', 'ADMIN')")
     @GetMapping("/contas/cliente/{cpf}")
     public ResponseEntity<Map<String, Object>> consultarClienteCore(
-            @PathVariable String cpf) {
-
+            @PathVariable String cpf
+    ) {
         return ResponseEntity.ok(
                 coreBancarioGateway.consultarContaCliente(cpf)
         );

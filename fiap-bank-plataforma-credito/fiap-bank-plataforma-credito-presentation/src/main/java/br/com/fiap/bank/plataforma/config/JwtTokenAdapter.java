@@ -12,6 +12,7 @@ import org.springframework.security.oauth2.jwt.JwsHeader;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
+import java.util.List;
 
 @Component
 public class JwtTokenAdapter implements TokenGeracaoPort {
@@ -41,7 +42,8 @@ public class JwtTokenAdapter implements TokenGeracaoPort {
                 .expiresAt(agora.plusSeconds(expiracaoMinutos * 60))
                 .subject(usuario.id().toString())
                 .claim("email", usuario.email())
-                .claim("perfil", usuario.perfil());
+                .claim("perfil", usuario.perfil())
+                .claim("roles", List.of(usuario.perfil()));
 
         if (usuario.cpf() != null && !usuario.cpf().isBlank()) {
             claimsBuilder.claim("cpf", usuario.cpf());
