@@ -1,6 +1,7 @@
 package br.com.fiap.bank.plataforma.application.service;
 
-import br.com.fiap.bank.plataforma.application.dto.SolicitarCreditoRequest;
+import br.com.fiap.bank.plataforma.application.dto.*;
+import br.com.fiap.bank.plataforma.domain.exception.SolicitacaoNaoEncontradaException;
 import br.com.fiap.bank.plataforma.domain.gateway.BureauCreditoGateway;
 import br.com.fiap.bank.plataforma.domain.gateway.CoreBancarioGateway;
 import br.com.fiap.bank.plataforma.domain.gateway.NotificacaoGateway;
@@ -8,7 +9,6 @@ import br.com.fiap.bank.plataforma.domain.gateway.ScrGateway;
 import br.com.fiap.bank.plataforma.domain.model.SolicitacaoCredito;
 import br.com.fiap.bank.plataforma.domain.model.StatusSolicitacao;
 import br.com.fiap.bank.plataforma.domain.repository.SolicitacaoCreditoRepository;
-import br.com.fiap.bank.plataforma.domain.exception.SolicitacaoNaoEncontradaException;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -17,17 +17,15 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
-
-import br.com.fiap.bank.plataforma.application.dto.*;
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Optional;
 
 @ExtendWith(MockitoExtension.class)
 class PlataformaCreditoServiceTest {
@@ -74,7 +72,10 @@ class PlataformaCreditoServiceTest {
     private void configurarPersistencia() {
         when(repository.salvar(any(SolicitacaoCredito.class)))
                 .thenAnswer(invocation ->
-                        invocation.getArgument(0, SolicitacaoCredito.class)
+                        invocation.getArgument(
+                                0,
+                                SolicitacaoCredito.class
+                        )
                 );
     }
 
@@ -99,6 +100,10 @@ class PlataformaCreditoServiceTest {
         );
     }
 
+    // ==========================================
+    // TESTES DO MOTOR DE CREDITO
+    // ==========================================
+
     @Test
     void deveReprovarQuandoClientePossuiRestricaoScr() {
         when(scrGateway.consultarRestricoesScr(anyString()))
@@ -114,10 +119,18 @@ class PlataformaCreditoServiceTest {
 
         var resposta = service.solicitarCredito(criarRequest());
 
-        assertEquals(StatusSolicitacao.REPROVADO, resposta.status());
-        assertEquals(Boolean.TRUE, resposta.scrRestricoes());
+        assertEquals(
+                StatusSolicitacao.REPROVADO,
+                resposta.status()
+        );
 
-        verify(repository).salvar(any(SolicitacaoCredito.class));
+        assertEquals(
+                Boolean.TRUE,
+                resposta.scrRestricoes()
+        );
+
+        verify(repository)
+                .salvar(any(SolicitacaoCredito.class));
     }
 
     @Test
@@ -135,7 +148,11 @@ class PlataformaCreditoServiceTest {
 
         var resposta = service.solicitarCredito(criarRequest());
 
-        assertEquals(StatusSolicitacao.REPROVADO, resposta.status());
+        assertEquals(
+                StatusSolicitacao.REPROVADO,
+                resposta.status()
+        );
+
         assertEquals(450, resposta.scoreBureau());
     }
 
@@ -152,18 +169,22 @@ class PlataformaCreditoServiceTest {
 
         configurarPersistencia();
 
-        SolicitarCreditoRequest request = new SolicitarCreditoRequest(
-                "12345678901",
-                "Cliente Teste",
-                "PESSOAL",
-                new BigDecimal("24000.00"),
-                12,
-                new BigDecimal("5000.00")
-        );
+        SolicitarCreditoRequest request =
+                new SolicitarCreditoRequest(
+                        "12345678901",
+                        "Cliente Teste",
+                        "PESSOAL",
+                        new BigDecimal("24000.00"),
+                        12,
+                        new BigDecimal("5000.00")
+                );
 
         var resposta = service.solicitarCredito(request);
 
-        assertEquals(StatusSolicitacao.EM_ANALISE, resposta.status());
+        assertEquals(
+                StatusSolicitacao.EM_ANALISE,
+                resposta.status()
+        );
     }
 
     @Test
@@ -181,7 +202,10 @@ class PlataformaCreditoServiceTest {
 
         var resposta = service.solicitarCredito(criarRequest());
 
-        assertEquals(StatusSolicitacao.APROVADO, resposta.status());
+        assertEquals(
+                StatusSolicitacao.APROVADO,
+                resposta.status()
+        );
 
         verify(notificacaoGateway).enviarNotificacao(
                 eq("12345678901"),
@@ -189,11 +213,17 @@ class PlataformaCreditoServiceTest {
         );
     }
 
+    // ==========================================
+    // TESTES DE CONSULTA
+    // ==========================================
+
     @Test
     void deveConsultarSolicitacoesPorCpf() {
         when(repository.buscarPorCpfCliente("12345678901"))
                 .thenReturn(List.of(
-                        criarSolicitacao(StatusSolicitacao.EM_ANALISE)
+                        criarSolicitacao(
+                                StatusSolicitacao.EM_ANALISE
+                        )
                 ));
 
         var resposta = service.consultarStatusPorCpf(
@@ -201,16 +231,23 @@ class PlataformaCreditoServiceTest {
         );
 
         assertEquals(1, resposta.size());
-        assertEquals("12345678901", resposta.get(0).cpfCliente());
-        assertEquals(StatusSolicitacao.EM_ANALISE,
-                resposta.get(0).status());
+        assertEquals(
+                "12345678901",
+                resposta.get(0).cpfCliente()
+        );
+        assertEquals(
+                StatusSolicitacao.EM_ANALISE,
+                resposta.get(0).status()
+        );
     }
 
     @Test
     void deveBuscarSolicitacaoPorId() {
         when(repository.buscarPorId(1L))
                 .thenReturn(Optional.of(
-                        criarSolicitacao(StatusSolicitacao.EM_ANALISE)
+                        criarSolicitacao(
+                                StatusSolicitacao.EM_ANALISE
+                        )
                 ));
 
         var resposta = service.buscarPorId(
@@ -218,7 +255,10 @@ class PlataformaCreditoServiceTest {
         );
 
         assertEquals(1L, resposta.id());
-        assertEquals(StatusSolicitacao.EM_ANALISE, resposta.status());
+        assertEquals(
+                StatusSolicitacao.EM_ANALISE,
+                resposta.status()
+        );
     }
 
     @Test
@@ -226,12 +266,13 @@ class PlataformaCreditoServiceTest {
         when(repository.buscarPorId(99L))
                 .thenReturn(Optional.empty());
 
-        SolicitacaoNaoEncontradaException excecao = assertThrows(
-                SolicitacaoNaoEncontradaException.class,
-                () -> service.buscarPorId(
-                        new BuscarSolicitacaoRequest(99L)
-                )
-        );
+        SolicitacaoNaoEncontradaException excecao =
+                assertThrows(
+                        SolicitacaoNaoEncontradaException.class,
+                        () -> service.buscarPorId(
+                                new BuscarSolicitacaoRequest(99L)
+                        )
+                );
 
         assertEquals(
                 "Solicitacao de credito nao encontrada com ID: 99",
@@ -243,8 +284,12 @@ class PlataformaCreditoServiceTest {
     void deveListarTodasSolicitacoes() {
         when(repository.listarTodas())
                 .thenReturn(List.of(
-                        criarSolicitacao(StatusSolicitacao.EM_ANALISE),
-                        criarSolicitacao(StatusSolicitacao.APROVADO)
+                        criarSolicitacao(
+                                StatusSolicitacao.EM_ANALISE
+                        ),
+                        criarSolicitacao(
+                                StatusSolicitacao.APROVADO
+                        )
                 ));
 
         var resposta = service.listarTodasSolicitacoes();
@@ -252,11 +297,17 @@ class PlataformaCreditoServiceTest {
         assertEquals(2, resposta.size());
     }
 
+    // ==========================================
+    // TESTES DA MESA DE OPERACOES
+    // ==========================================
+
     @Test
     void deveAprovarSolicitacaoPelaMesa() {
         when(repository.buscarPorId(1L))
                 .thenReturn(Optional.of(
-                        criarSolicitacao(StatusSolicitacao.EM_ANALISE)
+                        criarSolicitacao(
+                                StatusSolicitacao.EM_ANALISE
+                        )
                 ));
 
         configurarPersistencia();
@@ -268,9 +319,15 @@ class PlataformaCreditoServiceTest {
                 )
         );
 
-        assertEquals(StatusSolicitacao.APROVADO, resposta.status());
-        assertTrue(resposta.parecerOperador()
-                .contains("Documentacao validada"));
+        assertEquals(
+                StatusSolicitacao.APROVADO,
+                resposta.status()
+        );
+
+        assertTrue(
+                resposta.parecerOperador()
+                        .contains("Documentacao validada")
+        );
 
         verify(notificacaoGateway).enviarNotificacao(
                 eq("12345678901"),
@@ -282,7 +339,9 @@ class PlataformaCreditoServiceTest {
     void deveReprovarSolicitacaoPelaMesa() {
         when(repository.buscarPorId(1L))
                 .thenReturn(Optional.of(
-                        criarSolicitacao(StatusSolicitacao.EM_ANALISE)
+                        criarSolicitacao(
+                                StatusSolicitacao.EM_ANALISE
+                        )
                 ));
 
         configurarPersistencia();
@@ -294,9 +353,15 @@ class PlataformaCreditoServiceTest {
                 )
         );
 
-        assertEquals(StatusSolicitacao.REPROVADO, resposta.status());
-        assertTrue(resposta.parecerOperador()
-                .contains("Risco elevado"));
+        assertEquals(
+                StatusSolicitacao.REPROVADO,
+                resposta.status()
+        );
+
+        assertTrue(
+                resposta.parecerOperador()
+                        .contains("Risco elevado")
+        );
 
         verify(notificacaoGateway).enviarNotificacao(
                 eq("12345678901"),
@@ -304,11 +369,17 @@ class PlataformaCreditoServiceTest {
         );
     }
 
+    // ==========================================
+    // TESTES DE PROTECAO DO STATUS
+    // ==========================================
+
     @Test
     void deveImpedirAlteracaoDeSolicitacaoJaAprovada() {
         when(repository.buscarPorId(1L))
                 .thenReturn(Optional.of(
-                        criarSolicitacao(StatusSolicitacao.APROVADO)
+                        criarSolicitacao(
+                                StatusSolicitacao.APROVADO
+                        )
                 ));
 
         assertThrows(
@@ -327,4 +398,53 @@ class PlataformaCreditoServiceTest {
         verifyNoInteractions(notificacaoGateway);
     }
 
+    @Test
+    void deveImpedirAprovacaoDeSolicitacaoJaReprovada() {
+        when(repository.buscarPorId(1L))
+                .thenReturn(Optional.of(
+                        criarSolicitacao(
+                                StatusSolicitacao.REPROVADO
+                        )
+                ));
+
+        assertThrows(
+                IllegalStateException.class,
+                () -> service.aprovarSolicitacao(
+                        new AprovarSolicitacaoRequest(
+                                1L,
+                                "Tentativa de aprovacao"
+                        )
+                )
+        );
+
+        verify(repository, never())
+                .salvar(any(SolicitacaoCredito.class));
+
+        verifyNoInteractions(notificacaoGateway);
+    }
+
+    @Test
+    void deveImpedirNovaAprovacaoDeSolicitacaoJaAprovada() {
+        when(repository.buscarPorId(1L))
+                .thenReturn(Optional.of(
+                        criarSolicitacao(
+                                StatusSolicitacao.APROVADO
+                        )
+                ));
+
+        assertThrows(
+                IllegalStateException.class,
+                () -> service.aprovarSolicitacao(
+                        new AprovarSolicitacaoRequest(
+                                1L,
+                                "Tentativa de aprovacao duplicada"
+                        )
+                )
+        );
+
+        verify(repository, never())
+                .salvar(any(SolicitacaoCredito.class));
+
+        verifyNoInteractions(notificacaoGateway);
+    }
 }
