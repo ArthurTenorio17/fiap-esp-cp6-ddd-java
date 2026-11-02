@@ -1,6 +1,7 @@
 package br.com.fiap.bank.plataforma.application.service;
 
 import br.com.fiap.bank.plataforma.application.dto.*;
+import br.com.fiap.bank.plataforma.domain.exception.CoreBancarioIndisponivelException;
 import br.com.fiap.bank.plataforma.domain.exception.SolicitacaoNaoEncontradaException;
 import br.com.fiap.bank.plataforma.domain.gateway.BureauCreditoGateway;
 import br.com.fiap.bank.plataforma.domain.gateway.CoreBancarioGateway;
@@ -23,8 +24,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -440,6 +440,43 @@ class PlataformaCreditoServiceTest {
                                 "Tentativa de aprovacao duplicada"
                         )
                 )
+        );
+
+        verify(repository, never())
+                .salvar(any(SolicitacaoCredito.class));
+
+        verifyNoInteractions(notificacaoGateway);
+    }
+
+    // ==========================================
+    // TESTE DE INDISPONIBILIDADE DO CORE BANCARIO
+    // ==========================================
+
+    @Test
+    void naoDeveSalvarSolicitacaoQuandoCoreBancarioFalhar() {
+
+        when(scrGateway.consultarRestricoesScr(anyString()))
+                .thenReturn(false);
+
+        when(bureauGateway.consultarScoreBureau(anyString()))
+                .thenReturn(800);
+
+        when(coreBancarioGateway.consultarContaCliente(anyString()))
+                .thenThrow(
+                        new CoreBancarioIndisponivelException(
+                                "Core Bancario indisponivel"
+                        )
+                );
+
+        CoreBancarioIndisponivelException excecao =
+                assertThrows(
+                        CoreBancarioIndisponivelException.class,
+                        () -> service.solicitarCredito(criarRequest())
+                );
+
+        assertEquals(
+                "Core Bancario indisponivel",
+                excecao.getMessage()
         );
 
         verify(repository, never())
