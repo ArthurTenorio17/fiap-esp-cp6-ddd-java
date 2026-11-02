@@ -1,207 +1,409 @@
-# FIAP Bank - Plataforma de Crédito 💳
+# FIAP Bank — Plataforma de Crédito 💳
 
-Microsserviço de **Esteira e Motor de Decisão de Crédito** do FIAP Bank, responsável pelo processamento de propostas de crédito, aplicação das regras de negócio, análise de risco e comunicação com o Core Bancário.
+**Engenharia de Software — FIAP | Turma 2ESPG**
 
-O projeto foi refatorado seguindo os princípios de **Domain-Driven Design (DDD)**, com separação em módulos Maven e disponibilização de uma API RESTful versionada em `/api/v1`.
+**Checkpoint 6 — Domain Driven Design (DDD) — Java**
 
-Para garantir a retrocompatibilidade, a aplicação também mantém os endpoints legados, permitindo que clientes existentes continuem funcionando durante a migração.
+**Responsável pelo CP6:** Arthur Araújo Tenório — RM 562272
+
+---
+
+## 📖 Sobre o Projeto
+
+A Plataforma de Crédito é um microsserviço do ecossistema FIAP Bank, responsável pelo recebimento, processamento e acompanhamento de solicitações de crédito.
+
+O sistema utiliza regras de negócio para analisar propostas, consultar informações bancárias, verificar indicadores de risco e determinar se uma solicitação deve ser aprovada, reprovada ou encaminhada para análise manual.
+
+No CP6, o projeto foi ampliado com mecanismos de autenticação, autorização e testes automatizados.
+
+### Principais funcionalidades
+
+- Criação de solicitações de crédito.
+- Consulta de solicitações por CPF e identificador.
+- Análise de risco utilizando SCR e score de crédito.
+- Aprovação ou reprovação automática conforme regras de negócio.
+- Encaminhamento de solicitações para análise manual.
+- Aprovação e reprovação pela Mesa de Operações.
+- Integração com o Core Bancário.
+- Autenticação com JWT.
+- Controle de acesso baseado em perfis (RBAC).
+- Autorização de consultas conforme o CPF do cliente.
+- Validação de dados e tratamento padronizado de erros.
+- Testes automatizados de regras de negócio e segurança.
 
 ---
 
 ## 🛠️ Tecnologias Utilizadas
 
-- Java 21
-- Spring Boot 4.1
-- Spring Web
-- Spring Data JPA
-- Spring RestClient para comunicação com o Core Bancário
-- Spring Boot Actuator
-- H2 Database
-- Maven
-- JUnit e Mockito para testes
+| Tecnologia | Finalidade |
+|---|---|
+| Java 21 | Linguagem principal |
+| Spring Boot 4.1.1 | Framework de aplicação |
+| Spring Web | APIs REST |
+| Spring Security | Autenticação e autorização |
+| JWT / OAuth2 Resource Server | Tokens de acesso |
+| Spring Data JPA | Persistência |
+| H2 Database | Banco de dados local |
+| Spring RestClient | Integração com o Core Bancário |
+| Jakarta Bean Validation | Validação de requisições |
+| JUnit 5 | Testes automatizados |
+| Mockito | Simulação de dependências |
+| MockMvc | Testes HTTP |
+| Maven | Gerenciamento de dependências e build |
+| Git e GitHub | Versionamento |
 
 ---
 
 ## 🏗️ Arquitetura DDD
 
-A Plataforma de Crédito está organizada em quatro módulos Maven:
+O projeto utiliza arquitetura Maven multimódulo, com separação de responsabilidades.
 
 | Módulo | Responsabilidade |
 |---|---|
-| `fiap-bank-plataforma-credito-domain` | Entidades de domínio, regras de negócio e contratos de repositórios |
-| `fiap-bank-plataforma-credito-application` | Casos de uso, serviços e DTOs |
-| `fiap-bank-plataforma-credito-infrastructure` | Persistência JPA e integração HTTP com o Core Bancário |
-| `fiap-bank-plataforma-credito-presentation` | Controllers REST, controllers legados e inicialização da aplicação |
+| `fiap-bank-plataforma-credito-domain` | Entidades, regras de domínio, contratos e exceções |
+| `fiap-bank-plataforma-credito-application` | Serviços de aplicação, casos de uso e DTOs |
+| `fiap-bank-plataforma-credito-infrastructure` | Persistência JPA e integração com sistemas externos |
+| `fiap-bank-plataforma-credito-presentation` | Controllers REST, segurança, configuração e inicialização |
 
-Essa organização permite separar as responsabilidades e reduzir o acoplamento entre as camadas.
+### Fluxo arquitetural
+
+```text
+Cliente HTTP
+    |
+    v
+Presentation
+    |
+    v
+Application
+    |
+    v
+Domain
+    |
+    v
+Contratos de persistência e integração
+    |
+    v
+Adaptadores de Infrastructure
+    |
+    +---- H2 Database
+    |
+    +---- Core Bancário
+    |
+    +---- Serviços de consulta de risco
+```
+
+A arquitetura utiliza contratos e adaptadores para separar as regras de negócio dos detalhes técnicos de infraestrutura.
+
+O Maven Enforcer também é utilizado para verificar determinadas restrições de dependência entre módulos.
 
 ---
 
-## 📋 Pré-requisitos
+## 🔐 Autenticação JWT — CP6
 
-- Java JDK 21
-- Apache Maven 3.9+
-- Core Bancário disponível na porta `8080` para operações que dependem da integração
+A Plataforma de Crédito utiliza autenticação baseada em JSON Web Token (JWT).
 
-A Plataforma de Crédito utiliza a porta `8081`.
+O usuário realiza login com suas credenciais e recebe um token que deve ser enviado nas requisições protegidas.
+
+### Endpoint de autenticação
+
+`POST /api/auth/login`
+
+Exemplo de requisição:
+
+```json
+{
+  "email": "cliente@fiapbank.com",
+  "senha": "SENHA_CONFIGURADA_NO_AMBIENTE"
+}
+```
+
+Exemplo da estrutura de resposta:
+
+```json
+{
+  "accessToken": "TOKEN_JWT_GERADO",
+  "tokenType": "Bearer",
+  "expiresIn": 3600
+}
+```
+
+O token deve ser utilizado no cabeçalho HTTP:
+
+```http
+Authorization: Bearer TOKEN_JWT
+```
+
+### Características de segurança
+
+- Autenticação stateless.
+- Senhas verificadas com BCrypt.
+- Tokens JWT assinados com HS256.
+- Validação de assinatura e expiração.
+- Tempo de expiração configurável.
+- Proteção de endpoints por autenticação e autorização.
+
+**Importante:** senhas, tokens e segredos JWT reais não devem ser publicados no repositório.
 
 ---
 
-## 🚀 Como Compilar e Executar
+## 🛡️ Controle de Acesso — RBAC
 
-Na pasta raiz do projeto `fiap-bank-plataforma-credito`, execute:
+O CP6 implementa controle de acesso baseado em perfis de usuário.
 
-```bash
-mvn clean install
-```
+### Perfis utilizados
 
-Para iniciar a aplicação, execute:
+| Perfil | Responsabilidade |
+|---|---|
+| `CLIENTE` | Consultar suas próprias solicitações e realizar operações permitidas ao cliente |
+| `OPERADOR` | Consultar solicitações e realizar operações de análise e decisão de crédito |
+| `ADMIN` | Perfil administrativo, conforme as permissões configuradas |
 
-```bash
-mvn spring-boot:run -pl fiap-bank-plataforma-credito-presentation -am
-```
+### Autorização por CPF
 
-A aplicação estará disponível em:
+Além do RBAC, o sistema possui verificação de acesso por CPF.
 
-`http://localhost:8081`
+O objetivo é impedir que um cliente autenticado consulte solicitações pertencentes a outro cliente.
 
-Para executar os testes:
+Exemplo:
 
-```bash
-mvn test
-```
+- Cliente autenticado com CPF `12345678900`.
+- Consulta ao próprio CPF: permitida.
+- Consulta ao CPF de outro cliente: negada.
+- Operador autorizado: pode consultar solicitações conforme suas permissões.
+
+A autorização utiliza informações do usuário autenticado e do JWT, com integração ao Spring Security.
+
+### Respostas esperadas
+
+| Código HTTP | Significado |
+|---|---|
+| `200 OK` | Requisição processada |
+| `201 Created` | Solicitação criada |
+| `400 Bad Request` | Dados inválidos |
+| `401 Unauthorized` | Autenticação ausente ou inválida |
+| `403 Forbidden` | Usuário sem permissão |
+| `404 Not Found` | Solicitação não encontrada |
+| `409 Conflict` | Operação incompatível com o estado da solicitação |
+| `500 Internal Server Error` | Erro interno inesperado |
+| `502 Bad Gateway` | Falha na comunicação com serviço externo |
 
 ---
 
-## ⚙️ Configuração
+## 💰 Motor de Decisão de Crédito
 
-| Propriedade | Valor padrão | Descrição |
+O motor de crédito analisa as solicitações utilizando regras de negócio.
+
+### Fluxo de processamento
+
+1. Recebe a solicitação e valida os dados.
+2. Consulta restrições no SCR.
+3. Consulta o score do cliente no Bureau de Crédito.
+4. Consulta informações no Core Bancário.
+5. Aplica as regras de concessão.
+6. Persiste a solicitação.
+7. Envia uma notificação.
+8. Retorna o resultado da análise.
+
+### Regras implementadas
+
+| Condição | Resultado |
+|---|---|
+| Cliente com restrição no SCR | `REPROVADO` |
+| Score inferior a 500 | `REPROVADO` |
+| Parcela estimada superior a 30% da renda | `EM_ANALISE` |
+| Sem restrições e dentro dos critérios | `APROVADO` |
+
+A parcela estimada é calculada pela divisão do valor solicitado pela quantidade de parcelas, sem inclusão de juros nessa estimativa simplificada.
+
+### Exemplo
+
+Uma solicitação de R$ 60.000,00 em 12 parcelas, com renda mensal de R$ 3.000,00, produz uma parcela estimada de R$ 5.000,00.
+
+Como esse valor ultrapassa 30% da renda, a solicitação é encaminhada para análise manual.
+
+---
+
+## 🌐 API REST — Endpoints
+
+**URL base:** `http://localhost:8081`
+
+### Autenticação
+
+| Método | Endpoint | Descrição |
 |---|---|---|
-| `server.port` | `8081` | Porta da Plataforma de Crédito |
-| `core.bancario.url` | `http://localhost:8080/api/v1` | URL base do Core Bancário |
+| POST | `/api/auth/login` | Autenticar usuário e gerar JWT |
 
-As configurações podem ser ajustadas conforme o ambiente de execução.
+### Solicitações de crédito
+
+| Método | Endpoint | Descrição |
+|---|---|---|
+| GET | `/api/v1/solicitacoes` | Listar solicitações autorizadas |
+| GET | `/api/v1/solicitacoes?cpf=12345678900` | Consultar solicitações por CPF |
+| POST | `/api/v1/solicitacoes` | Criar solicitação |
+| PUT | `/api/v1/solicitacoes/{id}/aprovacao` | Aprovar solicitação |
+| PUT | `/api/v1/solicitacoes/{id}/reprovacao` | Reprovar solicitação |
+
+As permissões dependem do perfil autenticado e das verificações de autorização aplicadas aos endpoints.
+
+### Exemplo de criação de solicitação
+
+```bash
+curl -i -X POST \
+  "http://localhost:8081/api/v1/solicitacoes" \
+  -H "Authorization: Bearer $TOKEN_CLIENTE" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "cpfCliente": "12345678900",
+    "nomeCliente": "Ana Silva",
+    "tipoCredito": "EMPRESTIMO_PESSOAL",
+    "valorSolicitado": 15000.00,
+    "quantidadeParcelas": 24,
+    "rendaMensal": 7500.00
+  }'
+```
+
+### Consultar solicitações do cliente
+
+```bash
+curl -i \
+  "http://localhost:8081/api/v1/solicitacoes?cpf=12345678900" \
+  -H "Authorization: Bearer $TOKEN_CLIENTE"
+```
+
+### Listar solicitações como operador
+
+```bash
+curl -i \
+  "http://localhost:8081/api/v1/solicitacoes" \
+  -H "Authorization: Bearer $TOKEN_OPERADOR"
+```
+
+### Aprovar solicitação
+
+```bash
+curl -i -X PUT \
+  "http://localhost:8081/api/v1/solicitacoes/3/aprovacao" \
+  -H "Authorization: Bearer $TOKEN_OPERADOR" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "solicitacaoId": 3,
+    "parecerOperador": "Aprovado pela Mesa de Operacoes"
+  }'
+```
+
+### Reprovar solicitação
+
+```bash
+curl -i -X PUT \
+  "http://localhost:8081/api/v1/solicitacoes/4/reprovacao" \
+  -H "Authorization: Bearer $TOKEN_OPERADOR" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "solicitacaoId": 4,
+    "motivoReprovacao": "Reprovado apos analise"
+  }'
+```
 
 ---
 
-## 🌐 APIs RESTful
+## 🔄 Endpoints Legados
 
-A Plataforma de Crédito disponibiliza endpoints RESTful versionados em `/api/v1`.
+Para preservar a compatibilidade com os consumidores existentes, a Plataforma mantém controllers legados.
 
-A API utiliza métodos HTTP apropriados para operações de criação, consulta e atualização de solicitações de crédito.
+**URL base:** `/api/credito`
 
-Os controllers RESTful coexistem com os controllers legados, permitindo uma migração gradual das aplicações clientes.
+Entre as rotas documentadas anteriormente estão:
 
----
+- `POST /api/credito/solicitarCredito`
+- `POST /api/credito/consultarStatusCredito`
+- `POST /api/credito/listarTodasSolicitacoes`
+- `POST /api/credito/buscarSolicitacaoPorId`
+- `POST /api/credito/aprovarSolicitacao`
+- `POST /api/credito/reprovarSolicitacao`
+- `POST /api/credito/consultarClienteCore`
 
-## 🔄 Endpoints Legados (Compatibilidade)
+Essas rotas são destinadas à compatibilidade com aplicações existentes. A autenticação e a autorização aplicáveis devem ser respeitadas.
 
-Os endpoints abaixo pertencem à API original da Plataforma de Crédito.
-
-Eles continuam documentados para preservar a compatibilidade com clientes que utilizam rotas orientadas a ações e o método HTTP `POST`.
-
-**URL base:** `http://localhost:8081/api/credito`
-
-### 1. Solicitar Crédito
-
-**Endpoint:** `POST /api/credito/solicitarCredito`
-
-```json
-{
-  "cpfCliente": "12345678900",
-  "nomeCliente": "Ana Silva",
-  "tipoCredito": "EMPRESTIMO_PESSOAL",
-  "valorSolicitado": 15000.00,
-  "quantidadeParcelas": 24,
-  "rendaMensal": 7500.00
-}
-```
-
-### 2. Consultar Status por CPF
-
-**Endpoint:** `POST /api/credito/consultarStatusCredito`
-
-```json
-{
-  "cpfCliente": "12345678900"
-}
-```
-
-### 3. Listar Todas as Solicitações
-
-**Endpoint:** `POST /api/credito/listarTodasSolicitacoes`
-
-Corpo da requisição:
-
-```json
-{}
-```
-
-### 4. Buscar Solicitação por ID
-
-**Endpoint:** `POST /api/credito/buscarSolicitacaoPorId`
-
-```json
-{
-  "id": 1
-}
-```
-
-### 5. Aprovar Solicitação
-
-**Endpoint:** `POST /api/credito/aprovarSolicitacao`
-
-```json
-{
-  "id": 1,
-  "parecerOperador": "Proposta aprovada conforme política de crédito."
-}
-```
-
-### 6. Reprovar Solicitação
-
-**Endpoint:** `POST /api/credito/reprovarSolicitacao`
-
-```json
-{
-  "id": 1,
-  "parecerOperador": "Margem consignável insuficiente."
-}
-```
-
-### 7. Consultar Cliente no Core Bancário
-
-**Endpoint:** `POST /api/credito/consultarClienteCore`
-
-```json
-{
-  "cpfCliente": "12345678900"
-}
-```
+Para novas integrações, recomenda-se utilizar os endpoints versionados.
 
 ---
 
 ## 🔗 Integração com o Core Bancário
 
-A Plataforma de Crédito se comunica com o Core Bancário por meio de um adaptador de infraestrutura baseado em Spring `RestClient`.
+A Plataforma de Crédito utiliza Spring RestClient para consultar informações bancárias.
 
-Essa integração permite consultar informações bancárias necessárias ao processamento das propostas de crédito.
+**Endereço padrão do Core:** `http://localhost:8080/api/v1`
 
-O Core Bancário disponibiliza sua API na porta `8080`, utilizando rotas versionadas em `/api/v1`.
+O Core Bancário deve estar disponível para as operações que dependem dessa integração.
+
+Quando ocorre uma falha de comunicação, a aplicação utiliza tratamento de exceções para retornar uma resposta HTTP adequada.
 
 ---
 
-## 🧪 Testes
+## ⚙️ Configuração da Aplicação
 
-O projeto utiliza JUnit, Mockito e ferramentas de teste do Spring para validar o comportamento dos componentes.
+### Pré-requisitos
 
-Entre os testes existentes estão:
+- JDK 21.
+- Maven 3.9 ou superior.
+- IntelliJ IDEA ou outra IDE Java.
+- Core Bancário disponível para testes integrados.
 
-- Testes do controller REST de crédito.
-- Testes de requisições HTTP utilizando MockMvc.
-- Testes do adaptador de integração com o Core Bancário.
+### Propriedades principais
 
-Para executar a suíte de testes:
+| Propriedade | Descrição |
+|---|---|
+| `server.port` | Porta HTTP, configurada como 8081 |
+| `spring.datasource.url` | Conexão com o banco H2 |
+| `core.bancario.url` | URL do Core Bancário |
+| `security.jwt.secret` | Chave de assinatura JWT |
+| `security.jwt.expiration-minutes` | Tempo de validade do token |
+| `security.jwt.issuer` | Emissor do token |
+
+### Configuração da chave JWT
+
+A chave JWT deve ser configurada por variável de ambiente, sem inserir o segredo real no código ou no GitHub.
+
+Exemplo no Git Bash:
+
+```bash
+export JWT_SECRET="CHAVE_BASE64_VALIDA_COM_PELO_MENOS_32_BYTES"
+```
+
+O nome da variável deve corresponder à configuração utilizada no `application.yml`.
+
+---
+
+## 🚀 Como Compilar e Executar
+
+A partir da pasta `fiap-bank-plataforma-credito`:
+
+### Compilar e executar os testes
+
+```bash
+mvn clean verify
+```
+
+### Gerar os artefatos
+
+```bash
+mvn clean package
+```
+
+### Iniciar a aplicação
+
+Com as dependências do projeto instaladas:
+
+```bash
+cd fiap-bank-plataforma-credito-presentation
+mvn spring-boot:run
+```
+
+Também é possível iniciar a classe principal `PlataformaCreditoApplication` pelo IntelliJ IDEA.
+
+A aplicação utiliza a porta `8081`.
+
+### Executar testes
 
 ```bash
 mvn test
@@ -209,24 +411,107 @@ mvn test
 
 ---
 
-## 🔐 Compatibilidade com Aplicações Legadas
+## 🧪 Testes Automatizados — CP6
 
-A estratégia de migração adotada consiste em manter os contratos antigos enquanto a API RESTful é disponibilizada.
+O projeto utiliza JUnit 5, Mockito, MockMvc e ferramentas de teste do Spring.
 
-Os controllers legados atuam como pontos de compatibilidade, permitindo que aplicações existentes continuem utilizando suas rotas originais.
+### Categorias de testes
 
-Essa abordagem reduz o risco de interrupções durante a refatoração e possibilita a atualização gradual dos consumidores da API.
+**Testes de controllers**
+
+- Requisições HTTP.
+- Validação de entradas.
+- Respostas dos endpoints.
+
+**Testes do motor de crédito**
+
+- Aprovação automática.
+- Reprovação por restrições.
+- Reprovação por score insuficiente.
+- Encaminhamento para análise manual.
+- Aprovação e reprovação de solicitações.
+- Falhas na comunicação com o Core Bancário.
+
+**Testes de segurança**
+
+- Autorização baseada em perfis.
+- Acesso do cliente ao próprio CPF.
+- Negação de acesso a CPF de terceiros.
+- Permissões de operadores.
+- Verificação de regras de autorização.
+
+### Execução
+
+```bash
+mvn clean test
+```
+
+Nas validações realizadas durante o desenvolvimento do CP6, o Maven apresentou `BUILD SUCCESS`, sem falhas ou erros na execução informada dos testes.
+
+A quantidade de testes deve ser conferida no relatório mais recente do Maven antes da entrega final.
 
 ---
 
-## 👥 Integrantes
+## 🧾 Tratamento Global de Exceções
 
-- Arthur Araujo Tenório — RM: 562272
-- Breno Gonçalves Báo — RM: 564037
-- Vinicius Cavalcanti dos Reis — RM: 562063
+A API utiliza `GlobalExceptionHandler`, com `@RestControllerAdvice`, para padronizar respostas de erro.
+
+Exemplo:
+
+```json
+{
+  "timestamp": "2026-11-02T16:00:00",
+  "status": 403,
+  "error": "Forbidden",
+  "message": "Voce nao tem permissao para acessar este recurso."
+}
+```
+
+O tratamento contempla validações, solicitações inexistentes, conflitos de estado, acesso negado, falhas de integração e erros internos.
 
 ---
 
-## 📚 Projeto Acadêmico
+## 🔒 Boas Práticas
 
-Projeto desenvolvido para o **Checkpoint 5 — FIAP Bank: Plataforma de Concessão de Crédito**, com foco em arquitetura DDD, APIs RESTful, persistência, validação, testes e retrocompatibilidade.
+- Separação de responsabilidades em módulos.
+- Uso de contratos e adaptadores.
+- Autenticação JWT.
+- Autorização por perfil e CPF.
+- Validação das entradas.
+- Tratamento global de exceções.
+- Testes automatizados.
+- Controle de versão com Git.
+- Configurações sensíveis fora do repositório.
+- Manutenção de compatibilidade com endpoints legados.
+
+O banco H2 e os usuários de exemplo são destinados ao desenvolvimento e à demonstração acadêmica.
+
+---
+
+## 👥 Créditos e Participação
+
+### Checkpoint 6 — Desenvolvimento individual
+
+**Arthur Araújo Tenório — RM 562272**
+
+Responsável pela evolução da Plataforma de Crédito no CP6, incluindo autenticação JWT, autorização RBAC, controle de acesso por CPF, testes e validação das funcionalidades.
+
+### Checkpoint 5 — Projeto anterior
+
+- Arthur Araújo Tenório — RM 562272
+- Breno Gonçalves Báo — RM 564037
+- Vinicius Cavalcanti dos Reis — RM 562063
+
+O CP6 dá continuidade à base desenvolvida no checkpoint anterior.
+
+---
+
+## 🎓 Projeto Acadêmico
+
+**FIAP — Engenharia de Software**
+
+**Checkpoint 6 — Domain Driven Design — Java**
+
+O projeto demonstra a aplicação de conceitos de arquitetura de software, APIs REST, persistência, integração entre sistemas, autenticação, autorização, regras de negócio e testes automatizados em um cenário bancário.
+
+**FIAP Bank — Plataforma de Crédito**
