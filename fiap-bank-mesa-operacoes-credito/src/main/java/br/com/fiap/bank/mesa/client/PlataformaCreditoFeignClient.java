@@ -2,6 +2,8 @@ package br.com.fiap.bank.mesa.client;
 
 import br.com.fiap.bank.mesa.dto.AprovarSolicitacaoRequestDTO;
 import br.com.fiap.bank.mesa.dto.BuscarSolicitacaoRequestDTO;
+import br.com.fiap.bank.mesa.dto.LoginRequestDTO;
+import br.com.fiap.bank.mesa.dto.LoginResponseDTO;
 import br.com.fiap.bank.mesa.dto.ReprovarSolicitacaoRequestDTO;
 import br.com.fiap.bank.mesa.dto.SolicitacaoCreditoDTO;
 import org.springframework.cloud.openfeign.FeignClient;
@@ -12,6 +14,9 @@ import java.util.List;
 
 @FeignClient(name = "plataformaCreditoClient", url = "${plataforma.credito.url:http://localhost:8081}")
 public interface PlataformaCreditoFeignClient {
+
+    @PostMapping("/api/auth/login")
+    LoginResponseDTO login(@RequestBody LoginRequestDTO request);
 
     @PostMapping("/api/credito/listarTodasSolicitacoes")
     List<SolicitacaoCreditoDTO> listarTodasSolicitacoes();

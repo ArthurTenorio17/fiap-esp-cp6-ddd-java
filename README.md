@@ -1,111 +1,123 @@
 
-# FIAP Bank - Esteira de Crédito 🏦💳
-----
-## 👥 Integrantes
+# FIAP Bank - Plataforma de Crédito e Segurança 🏦🔐
 
-**Turma:** 2ESPG
+----
+## 🎓 Identificação Acadêmica
+
+| | |
+| :--- | :--- |
+| **Aluno responsável** | Arthur Araújo Tenório |
+| **RM** | 562272 |
+| **Curso** | Engenharia de Software |
+| **Instituição** | FIAP |
+| **Disciplina** | Domain Driven Design — Java |
+| **Atividade** | Checkpoint 6 |
+| **Turma** | 2ESPG |
+
+### 👥 Integrantes
 
 | Nome | RM |
 | :--- | :--- |
 | Arthur Araújo Tenório | 562272 |
 | Breno Gonçalves Báo | 564037 |
 | Vinicius Cavalcanti dos Reis | 562063 |
+
 -----
-Monorepo contendo o ecossistema da **Esteira de Crédito do FIAP Bank**, composto por quatro aplicações integradas:
 
-- Core Bancário
-- Plataforma de Crédito
-- Mesa de Operações de Crédito
-- Internet Banking Mobile
-
-O projeto demonstra a integração entre serviços bancários, análise de solicitações de crédito e interfaces utilizadas por clientes e operadores.
+Monorepo da **Esteira de Crédito do FIAP Bank**. No Checkpoint 6, a Plataforma de Crédito passa a ser um **OAuth2 Resource Server stateless**: toda requisição protegida apresenta um JWT assinado, validado de forma autônoma, com controle de acesso por perfil. O Internet Banking Mobile e a Mesa de Operações propagam o token por meio de interceptadores HTTP.
 
 ---
 
-## 📁 Estrutura do Workspace e Documentação
-
-Cada aplicação possui seu próprio `README.md`, com informações sobre tecnologias, arquitetura e funcionalidades.
+## 🏗️ Arquitetura e Módulos
 
 | Projeto | Tecnologia | Porta | Documentação |
 | :--- | :--- | :---: | :--- |
-| `fiap-bank-core-bancario` | Java 21, Spring Boot, JPA, DDD e Maven multimódulo | `8080` | [README do Core Bancário](./fiap-bank-core-bancario/README.md) |
-| `fiap-bank-plataforma-credito` | Java 21, Spring Boot, JPA, RestClient, DDD e Maven multimódulo | `8081` | [README da Plataforma de Crédito](./fiap-bank-plataforma-credito/README.md) |
-| `fiap-bank-mesa-operacoes-credito` | Java 21, Spring Boot, Thymeleaf e OpenFeign | `8082` | [README da Mesa de Operações](./fiap-bank-mesa-operacoes-credito/README.md) |
-| `fiap-bank-internet-banking-mobile` | Angular, TypeScript e CSS responsivo | `4200` | [README do Mobile Angular](./fiap-bank-internet-banking-mobile/README.md) |
+| `fiap-bank-core-bancario` | Java 21, Spring Boot, JPA, DDD, Maven multimódulo | `8080` | [README](./fiap-bank-core-bancario/README.md) |
+| `fiap-bank-plataforma-credito` | Java 21, Spring Boot, Spring Security, OAuth2 Resource Server, JPA, DDD, Maven multimódulo | `8081` | [README](./fiap-bank-plataforma-credito/README.md) |
+| `fiap-bank-mesa-operacoes-credito` | Java 21, Spring Boot, Thymeleaf, OpenFeign | `8082` | [README](./fiap-bank-mesa-operacoes-credito/README.md) |
+| `fiap-bank-internet-banking-mobile` | Angular 17, TypeScript | `4200` | [README](./fiap-bank-internet-banking-mobile/README.md) |
 
-### Organização das aplicações
+```text
+Internet Banking Mobile (Angular - 4200)         Mesa de Operações (Thymeleaf - 8082)
+  HttpInterceptor: Authorization: Bearer            Feign RequestInterceptor: Authorization: Bearer
+                    |                                                |
+                    +----------------------+-------------------------+
+                                           v
+                     Plataforma de Crédito (Resource Server - 8081)
+                     Emite o JWT em /api/auth/login e valida as demais rotas
+                                           |
+                                           v
+                              Core Bancário (Spring Boot - 8080)
+```
 
-**Core Bancário:** responsável pelos dados de clientes e contas bancárias.
+### Segurança e camadas DDD
 
-**Plataforma de Crédito:** recebe solicitações, consulta informações bancárias e executa o fluxo de análise de crédito.
+As dependências do Spring Security ficam **somente no módulo `presentation`**. O `domain` define as portas (`TokenGeracaoPort`, `SenhaVerificacaoPort`, `UsuarioConsultaPort`) sem conhecer o framework.
 
-**Mesa de Operações:** interface web para visualização e tratamento de solicitações de crédito.
+| Classe | Responsabilidade |
+| :--- | :--- |
+| `SecurityConfig` | `SecurityFilterChain`, sessão `STATELESS`, CSRF e `frameOptions` desativados, rotas públicas, CORS e `JwtAuthenticationConverter` |
+| `JwtConfig` | `JwtEncoder` e `JwtDecoder` (Nimbus): assinatura HS256, expiração e emissor |
+| `TokenService` | Emissão do token com as claims `iss`, `sub`, `iat`, `exp`, `cpf`, `conta`, `roles` e `scope` |
+| `CpfAuthorizationService` | Garante que um CLIENTE opere somente sobre o próprio CPF |
+| `FeignClientConfig` (Mesa) | `RequestInterceptor` que propaga o Bearer Token |
+| `authInterceptor` (Angular) | Anexa o Bearer Token somente às rotas protegidas da Plataforma |
 
-**Internet Banking Mobile:** interface Angular utilizada pelo cliente para consultar informações, solicitar crédito e acompanhar o histórico de solicitações.
+### Perfis de acesso
+
+| Operação | CLIENTE | OPERADOR | ADMIN |
+| :--- | :---: | :---: | :---: |
+| Solicitar crédito | Próprio CPF | Qualquer CPF | Qualquer CPF |
+| Consultar solicitações por CPF | Próprio CPF | Qualquer CPF | Qualquer CPF |
+| Consultar conta no Core | Própria conta | Qualquer CPF | Qualquer CPF |
+| Listar todas / buscar por ID | ❌ 403 | ✅ | ✅ |
+| Aprovar / reprovar | ❌ 403 | ✅ | ✅ |
+
+O CLIENTE é autorizado pela autoridade `SCOPE_ROLE_CLIENTE` (claim `scope`). OPERADOR e ADMIN são autorizados por `ROLE_OPERADOR` e `ROLE_ADMIN` (claim `roles`). Sem token, ou com token inválido, expirado ou de outro emissor, a resposta é **401**. Sem permissão, é **403**.
+
+### Como a Mesa obtém o token
+
+Um navegador não envia o header `Authorization` ao abrir uma página Thymeleaf. Por isso, a Mesa tem uma tela de login que autentica o operador na Plataforma e guarda o JWT em um cookie `HttpOnly` e `SameSite=Strict`. O `RequestInterceptor` do Feign usa o header `Authorization` recebido, se houver, ou o token desse cookie. Não há `HttpSession`, e cada ação usa a identidade do próprio operador.
 
 ---
 
-## 🛠️ Pré-requisitos
+## 🛠️ Requisitos de Execução
 
-Para executar o projeto, é necessário instalar:
-
-- **JDK 21** (ou superior)
+- **JDK 21** (exigido pelo `maven-enforcer-plugin`)
 - **Apache Maven 3.9+**
-- **Node.js e npm**
-- Navegador web atualizado
-- Git, para controle de versão
-
-### Verificar o Java
-
-Antes de executar qualquer aplicação Java, confira a versão configurada no terminal:
-
-```bash
-java -version
-mvn -version
-```
-
-Os comandos devem indicar o uso do **Java 21 ou superior**.
-
-### Configuração do Java 21 no Git Bash
-
-Se o Maven estiver utilizando outra versão do Java, configure o `JAVA_HOME` com o caminho da sua instalação.
-
-Exemplo de configuração no Git Bash:
-
-```bash
-export JAVA_HOME="/c/Users/SEU_USUARIO/.jdks/NOME_DO_JDK_21"
-export PATH="$JAVA_HOME/bin:$PATH"
-```
-
-Em seguida, confirme novamente:
-
-```bash
-java -version
-mvn -version
-```
-
-**Importante:** o caminho do `JAVA_HOME` varia conforme o computador. A configuração feita com `export` vale para a sessão atual do terminal.
+- **Node.js e npm** (testado com Node 26 e npm 11)
+- Navegador atualizado; o Chrome é necessário para `ng test`
 
 ---
 
-## 🚦 Ordem Recomendada de Execução
+## ⚙️ Variáveis de Ambiente
 
-Para testar as integrações, inicie as aplicações na seguinte ordem:
+Nenhuma variável é necessária para a demonstração local.
 
-1. Core Bancário
-2. Plataforma de Crédito
-3. Mesa de Operações
-4. Internet Banking Mobile
+| Variável | Aplicação | Padrão | Descrição |
+| :--- | :--- | :--- | :--- |
+| `SPRING_PROFILES_ACTIVE` | Plataforma | `dev` | `dev` cria os usuários de teste e usa a chave de exemplo. Qualquer outro perfil, como `prod`, exige `JWT_SECRET` |
+| `JWT_SECRET` | Plataforma | Chave de exemplo, só no perfil `dev` | Chave HS256 com no mínimo 32 bytes |
+| `JWT_EXPIRATION_SECONDS` | Plataforma | `7200` | Validade do token |
+| `JWT_ISSUER` | Plataforma | `fiap-bank-plataforma-credito` | Emissor do token e valor exigido na validação |
+| `CORE_BANCARIO_URL` | Plataforma | `http://localhost:8080/api/v1` | URL do Core Bancário |
+| `PLATAFORMA_CREDITO_URL` | Mesa | `http://localhost:8081` | URL da Plataforma |
+| `MESA_COOKIE_SECURE` | Mesa | `false` | Use `true` quando a Mesa for servida por HTTPS |
 
-**Importante:** os comandos abaixo consideram que o terminal está inicialmente na pasta principal do repositório.
+**Atenção:** a chave de `application-dev.yml` é o exemplo público do enunciado, não um segredo real. Fora do ambiente local, gere uma chave própria e nunca a coloque no repositório:
 
-Cada aplicação deve permanecer em execução em seu próprio terminal.
+```bash
+export SPRING_PROFILES_ACTIVE=prod
+export JWT_SECRET="$(openssl rand -base64 48)"
+```
 
-### 1. Core Bancário — Porta 8080
+---
 
-Responsável pela gestão dos dados bancários utilizados na integração.
+## 🚦 Como Iniciar
 
-No primeiro terminal:
+Inicie nesta ordem, cada aplicação em seu próprio terminal, a partir da pasta principal do repositório. Se as portas estiverem ocupadas por uma execução anterior, encerre-a primeiro.
+
+### 1. Core Bancário — 8080
 
 ```bash
 cd fiap-bank-core-bancario
@@ -114,19 +126,7 @@ cd fiap-bank-core-bancario-presentation
 mvn spring-boot:run
 ```
 
-Endereços:
-
-- API: `http://localhost:8080/api/v1`
-- Contas: `http://localhost:8080/api/v1/contas`
-- Console H2: `http://localhost:8080/h2-console`
-
-Aguarde a mensagem de inicialização antes de iniciar a Plataforma de Crédito.
-
-### 2. Plataforma de Crédito — Porta 8081
-
-Responsável pelo processamento das solicitações e pela integração com o Core Bancário.
-
-Em um segundo terminal, a partir da pasta principal do repositório:
+### 2. Plataforma de Crédito — 8081
 
 ```bash
 cd fiap-bank-plataforma-credito
@@ -135,36 +135,18 @@ cd fiap-bank-plataforma-credito-presentation
 mvn spring-boot:run
 ```
 
-Endereços:
+Console H2: `http://localhost:8081/h2-console` (JDBC URL `jdbc:h2:mem:plataformacreditodb`, usuário `sa`, sem senha).
 
-- API de crédito: `http://localhost:8081/api/v1`
-- Solicitações: `http://localhost:8081/api/v1/solicitacoes`
-- Console H2: `http://localhost:8081/h2-console`
-
-**Atenção:** o Core Bancário deve estar em execução para que as consultas integradas de clientes e contas funcionem.
-
-### 3. Mesa de Operações — Porta 8082
-
-Interface web desenvolvida com Thymeleaf para acompanhamento e tratamento das solicitações.
-
-Em um terceiro terminal, a partir da pasta principal do repositório:
+### 3. Mesa de Operações — 8082
 
 ```bash
 cd fiap-bank-mesa-operacoes-credito
 mvn spring-boot:run
 ```
 
-Abra no navegador:
+Abra `http://localhost:8082` e entre com um usuário OPERADOR ou ADMIN.
 
-`http://localhost:8082`
-
-A Mesa consulta os dados da Plataforma de Crédito. Portanto, mantenha a aplicação da porta `8081` em execução.
-
-### 4. Internet Banking Mobile — Porta 4200
-
-Interface Angular responsiva para o cliente bancário.
-
-Em um quarto terminal, a partir da pasta principal do repositório:
+### 4. Internet Banking Mobile — 4200
 
 ```bash
 cd fiap-bank-internet-banking-mobile
@@ -172,288 +154,163 @@ npm install
 npm start
 ```
 
-Abra no navegador:
-
-`http://localhost:4200`
-
-O Angular utiliza a Plataforma de Crédito para enviar solicitações, consultar seus status e obter informações bancárias por meio da integração com o Core.
+Abra `http://localhost:4200` e entre com o usuário CLIENTE.
 
 ---
 
-## 🔗 Integração entre as Aplicações
+## 🧪 Usuários e Dados de Demonstração
 
-O fluxo principal de comunicação é:
+Criados apenas no perfil `dev`, somente para testes locais.
 
-```text
-Internet Banking Mobile (Angular - 4200)
-                 |
-                 v
-Plataforma de Crédito (Spring Boot - 8081)
-                 |
-                 v
-Core Bancário (Spring Boot - 8080)
+| E-mail | Senha | Perfil | Onde usar |
+| :--- | :--- | :--- | :--- |
+| `cliente@fiapbank.com` | `Cliente@123` | CLIENTE (CPF `98765432100`, conta `78901-2`) | Internet Banking |
+| `teste@fiapbank.com` | `Teste@123` | OPERADOR | Mesa de Operações |
+| `admin@fiapbank.com` | `Admin@123` | ADMIN | Mesa de Operações |
 
-Mesa de Operações (Thymeleaf - 8082)
-                 |
-                 v
-Plataforma de Crédito (Spring Boot - 8081)
-```
-
-### Fluxo de solicitação de crédito
-
-1. O cliente acessa o Internet Banking Mobile.
-2. O Angular envia a solicitação para a Plataforma de Crédito.
-3. A Plataforma consulta as informações necessárias no Core Bancário.
-4. A solicitação é processada conforme as regras implementadas.
-5. O cliente pode consultar o histórico e o status das solicitações.
-6. A Mesa de Operações apresenta as solicitações disponíveis para acompanhamento e tratamento.
-
-### Integração com o Core Bancário
-
-O Angular consulta as informações bancárias por meio da Plataforma de Crédito.
-
-Entre os dados apresentados estão:
-
-- Agência
-- Número da conta
-- Situação da conta
-- Saldo bancário
-
-O saldo exibido deve refletir os dados retornados pela consulta ao Core Bancário.
-
-**A aprovação de uma solicitação de crédito não deve aumentar artificialmente o saldo exibido no Angular.** A atualização efetiva do saldo depende das operações realizadas pelo sistema bancário.
-
----
-
-## 🧪 Dados Pré-Carregados para Testes
-
-O projeto possui dados de exemplo para facilitar a validação dos fluxos.
-
-| Cliente | CPF | Cenário |
+| Cliente no Core | CPF | Cenário |
 | :--- | :--- | :--- |
-| Ana Silva | `12345678900` | Cliente utilizado nos testes de integração |
-| Carlos Eduardo Oliveira | `98765432100` | Cliente de exemplo |
-| Mariana Souza | `55544433399` | Cenário de restrição no SCR |
+| Ana Silva | `12345678900` | Conta `12345-6` |
+| Carlos Eduardo Oliveira | `98765432100` | Conta `78901-2`, usada pelo usuário CLIENTE |
+| Mariana Souza | `55544433399` | Restrição no SCR, reprovação automática |
 
-### Exemplo de conta bancária
-
-Nos testes realizados com o cliente **Ana Silva**, a consulta ao Core Bancário retornou:
-
-- Agência: `0001`
-- Conta: `12345-6`
-- Saldo: `R$ 12.500,00`
-
-Os dados são utilizados para demonstração e testes locais.
+**Regra do motor de crédito:** restrição no SCR ou score abaixo de 500 reprova; parcela acima de 30% da renda vai para a Mesa (`EM_ANALISE`); os demais casos são aprovados.
 
 ---
 
-## 📡 Exemplos de Requisições
+## 🔑 Autenticação JWT
 
-Os exemplos abaixo podem ser executados com `curl`, Postman ou outra ferramenta de requisições HTTP.
-
-### Consultar contas no Core Bancário
+### Obter o token
 
 ```bash
-curl -i http://localhost:8080/api/v1/contas
+curl -i -X POST http://localhost:8081/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"cliente@fiapbank.com","senha":"Cliente@123"}'
 ```
 
-### Listar solicitações de crédito
+```json
+{ "accessToken": "eyJhbGciOiJIUzI1NiJ9...", "tokenType": "Bearer", "expiresIn": 7200 }
+```
+
+Conteúdo do token:
+
+```json
+{
+  "iss": "fiap-bank-plataforma-credito",
+  "sub": "98765432100",
+  "iat": 1793664000,
+  "exp": 1793671200,
+  "cpf": "98765432100",
+  "conta": "78901-2",
+  "roles": ["CLIENTE"],
+  "scope": "ROLE_CLIENTE",
+  "email": "cliente@fiapbank.com",
+  "perfil": "CLIENTE"
+}
+```
+
+### Usar o token
 
 ```bash
+TOKEN="cole-aqui-o-accessToken"
+
+# 200: o cliente consulta as próprias solicitações
+curl -i "http://localhost:8081/api/v1/solicitacoes?cpf=98765432100" \
+  -H "Authorization: Bearer $TOKEN"
+
+# 201: o cliente solicita crédito para o próprio CPF
+curl -i -X POST http://localhost:8081/api/v1/solicitacoes \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"cpfCliente":"98765432100","nomeCliente":"Carlos Eduardo Oliveira","tipoCredito":"PESSOAL","valorSolicitado":5000.00,"quantidadeParcelas":12,"rendaMensal":4500.00}'
+
+# 403: o cliente não pode listar todas as solicitações
+curl -i http://localhost:8081/api/v1/solicitacoes \
+  -H "Authorization: Bearer $TOKEN"
+
+# 401: requisição sem token
 curl -i http://localhost:8081/api/v1/solicitacoes
 ```
 
-### Solicitar crédito
+Com o token de um operador:
 
 ```bash
-curl -i -X POST "http://localhost:8081/api/v1/solicitacoes" \
+curl -i -X PUT http://localhost:8081/api/v1/solicitacoes/1/aprovacao \
+  -H "Authorization: Bearer $TOKEN_OPERADOR" \
   -H "Content-Type: application/json" \
-  -d '{
-    "cpfCliente": "12345678900",
-    "nomeCliente": "Ana Silva",
-    "tipoCredito": "PESSOAL",
-    "valorSolicitado": 5000.00,
-    "quantidadeParcelas": 12,
-    "rendaMensal": 4500.00
-  }'
+  -d '{"parecerOperador":"Renda verificada"}'
 ```
 
-O resultado depende das regras de análise de crédito implementadas.
+---
 
-### Consultar cliente no Core por meio da Plataforma
+## 📡 Principais Endpoints
 
-```bash
-curl -i -X POST "http://localhost:8081/api/credito/consultarClienteCore" \
-  -H "Content-Type: application/json" \
-  -d '{"cpfCliente":"12345678900"}'
-```
+### Plataforma de Crédito
 
-Esse endpoint permite validar a comunicação da Plataforma de Crédito com o Core Bancário.
+| Método | Rota | Acesso |
+| :--- | :--- | :--- |
+| `POST` | `/api/auth/login` | Público |
+| `GET` | `/h2-console/**` | Público |
+| `POST` | `/api/v1/solicitacoes` | CLIENTE (próprio CPF), OPERADOR, ADMIN |
+| `GET` | `/api/v1/solicitacoes?cpf={cpf}` | CLIENTE (próprio CPF), OPERADOR, ADMIN |
+| `GET` | `/api/v1/contas/cliente/{cpf}` | CLIENTE (próprio CPF), OPERADOR, ADMIN |
+| `GET` | `/api/v1/solicitacoes` | OPERADOR, ADMIN |
+| `GET` | `/api/v1/solicitacoes/{id}` | OPERADOR, ADMIN |
+| `PUT` | `/api/v1/solicitacoes/{id}/aprovacao` | OPERADOR, ADMIN |
+| `PUT` | `/api/v1/solicitacoes/{id}/reprovacao` | OPERADOR, ADMIN |
+
+As rotas legadas `POST /api/credito/*` (`solicitarCredito`, `consultarStatusCredito`, `consultarClienteCore`, `buscarSolicitacaoPorId`, `listarTodasSolicitacoes`, `aprovarSolicitacao`, `reprovarSolicitacao`) seguem disponíveis, com as mesmas proteções. A Mesa as utiliza.
+
+### Core Bancário
+
+`/api/v1/clientes` e `/api/v1/contas`, incluindo `GET /api/v1/contas/cliente/{cpf}`. O enunciado do CP6 restringe a transformação em Resource Server à Plataforma: **o Core não exige autenticação** e deve ficar em rede interna.
 
 ---
 
-## 📱 Internet Banking Mobile
+## ✅ Testes
 
-O Angular oferece uma interface responsiva para utilização pelo cliente.
+### Testes automatizados
 
-Entre as funcionalidades disponíveis estão:
+| Projeto | Comando | Testes | Resultado |
+| :--- | :--- | ---: | :--- |
+| Core Bancário | `mvn clean test` | 61 | SUCCESS |
+| Plataforma de Crédito | `mvn clean test` | 64 | SUCCESS |
+| Mesa de Operações | `mvn clean test` | 16 | SUCCESS |
+| Internet Banking Mobile | `npx ng test --watch=false --browsers=ChromeHeadless` | 16 | SUCCESS |
+| **Total** | | **157** | **0 falhas** |
 
-- Visualização das informações da conta;
-- Consulta do saldo bancário;
-- Solicitação de crédito;
-- Simulação de parcelas;
-- Consulta do histórico de solicitações;
-- Acompanhamento do status das solicitações;
-- Tela demonstrativa de extrato.
+Em `SecurityIntegrationTest`, a cadeia de segurança real cobre emissão de claims, token ausente, malformado, expirado, de outro emissor ou com outra chave, 403 e as operações de cada perfil.
 
-### Observação sobre o extrato
+### Validação integrada
 
-**O extrato apresentado no Angular é demonstrativo.**
+Em 02/11/2026, com Core, Plataforma e Mesa em execução e o Angular em um Chrome real, foram validados:
 
-As movimentações e os totais dessa tela são exemplos utilizados para fins visuais e de apresentação.
+- login e claims do token para os três perfis;
+- recusa de token ausente, inválido, expirado, de outro emissor, com outra chave, com `alg=none` ou com payload adulterado;
+- 403 e operações permitidas para CLIENTE, OPERADOR e ADMIN;
+- Bearer Token enviado pelo Angular, observado nas requisições de rede;
+- aprovação e reprovação na Mesa, confirmadas na Plataforma;
+- ausência de `JSESSIONID`, H2 Console e CORS;
+- comportamento com Core ou Plataforma fora do ar.
 
-Eles **não representam transações bancárias reais consultadas no Core Bancário**.
-
-Essa informação também é apresentada na interface do aplicativo para evitar confusão entre dados demonstrativos e dados efetivamente integrados.
-
----
-
-## 🖥️ Mesa de Operações de Crédito
-
-A Mesa de Operações utiliza Spring Boot e Thymeleaf.
-
-O painel permite visualizar:
-
-- Total de solicitações;
-- Solicitações pendentes de análise;
-- Solicitações aprovadas;
-- Solicitações reprovadas;
-- Informações dos clientes;
-- Valores solicitados;
-- Quantidade de parcelas;
-- Informações de score e SCR;
-- Status e detalhes das solicitações.
-
-A interface consulta a Plataforma de Crédito para apresentar os dados da esteira.
+A validação usou portas alternativas (18080 a 18082), pois as portas padrão estavam ocupadas naquele momento.
 
 ---
 
-## ✅ Testes Automatizados
+## ⚠️ Observações
 
-Foram executados testes automatizados dos dois backends principais.
-
-| Projeto | Testes executados | Falhas | Erros | Resultado |
-| :--- | ---: | ---: | ---: | :--- |
-| Core Bancário | 23 | 0 | 0 | SUCCESS |
-| Plataforma de Crédito | 6 | 0 | 0 | SUCCESS |
-| **Total** | **29** | **0** | **0** | **Aprovado** |
-
-### Executar os testes do Core Bancário
-
-A partir da pasta principal do repositório:
-
-```bash
-cd fiap-bank-core-bancario
-mvn clean test
-```
-
-### Executar os testes da Plataforma de Crédito
-
-A partir da pasta principal do repositório:
-
-```bash
-cd fiap-bank-plataforma-credito
-mvn clean test
-```
-
-### Resultados obtidos
-
-Na validação realizada em 16/10/2026:
-
-- Core Bancário: `BUILD SUCCESS`, com 23 testes aprovados;
-- Plataforma de Crédito: `BUILD SUCCESS`, com 6 testes aprovados;
-- Nenhuma falha ou erro nos testes executados.
-
-Os testes automatizados complementam, mas não substituem, a validação manual do fluxo integrado.
+- O extrato do Angular é **demonstrativo** e não representa transações reais.
+- Saldo, agência e conta do Angular vêm do Core Bancário. A aprovação de crédito não altera o saldo.
+- O nome exibido no Angular é um valor padrão editável, pois a conta do Core não informa o nome do titular.
+- Os bancos H2 são em memória: os dados voltam ao estado inicial a cada reinício.
+- Usuários e senhas de demonstração existem apenas no perfil `dev`.
 
 ---
 
-## 🔍 Validação Manual da Integração
+## 📦 Informações de Entrega
 
-O fluxo foi verificado localmente com as aplicações em execução.
-
-### Cenários verificados
-
-**1. Consulta ao Core Bancário**
-
-A API do Core Bancário respondeu com os dados da conta do cliente de teste.
-
-**2. Integração entre Plataforma de Crédito e Core**
-
-A consulta de cliente realizada pela Plataforma retornou os dados bancários esperados.
-
-**3. Criação de solicitação de crédito**
-
-Foi realizada uma requisição HTTP de criação de solicitação, com resposta `201 Created`.
-
-**4. Consulta da solicitação na Mesa**
-
-A solicitação criada foi exibida no painel da Mesa de Operações.
-
-**5. Exibição dos dados no Angular**
-
-A interface apresentou o saldo e os dados da conta, com formatação brasileira de moeda.
-
-**6. Correção da apresentação visual**
-
-Foram realizados ajustes de contraste e legibilidade na Mesa de Operações.
-
-**7. Tratamento dos dados demonstrativos**
-
-A interface Angular passou a identificar o extrato como demonstrativo, sem apresentar suas movimentações como transações reais.
-
----
-
-## ⚠️ Observações Importantes
-
-- Os projetos Java exigem JDK 21 ou superior (o `maven-enforcer-plugin` bloqueia versões anteriores).
-- A Plataforma de Crédito acessa o Core Bancário via `RestClient`; a Mesa de Operações ainda usa Spring Cloud OpenFeign para chamar a Plataforma.
-- Os endpoints antigos `/api/credito/*` da Plataforma foram mantidos apenas por retrocompatibilidade com o Angular e a Mesa; novos clientes devem usar `/api/v1`.
-- O Core Bancário deve estar disponível antes das operações da Plataforma de Crédito que dependem de seus dados.
-- A Mesa de Operações depende da Plataforma de Crédito.
-- O Angular também depende da Plataforma de Crédito para os recursos integrados.
-- Os dados locais de teste podem ser reinicializados conforme a configuração de persistência de cada aplicação.
-- A aprovação de crédito não equivale automaticamente ao lançamento do valor na conta bancária.
-- O extrato do Angular contém dados demonstrativos.
-
----
-
-## 📚 Documentação Complementar
-
-Para detalhes específicos de cada aplicação, consulte:
-
-- [Core Bancário](./fiap-bank-core-bancario/README.md)
-- [Plataforma de Crédito](./fiap-bank-plataforma-credito/README.md)
-- [Mesa de Operações](./fiap-bank-mesa-operacoes-credito/README.md)
-- [Internet Banking Mobile](./fiap-bank-internet-banking-mobile/README.md)
-
----
-
-## 🎓 Projeto Acadêmico
-
-Projeto desenvolvido no contexto do **Checkpoint 5 da FIAP**, com foco em:
-
-- Java e Spring Boot;
-- Domain-Driven Design (DDD);
-- Arquitetura em módulos Maven (domain, infrastructure, application e presentation);
-- APIs RESTful versionadas, com Bean Validation e tratamento global de erros;
-- Persistência com Spring Data JPA;
-- Integração entre serviços (RestClient na Plataforma e OpenFeign na Mesa);
-- Interfaces web com Angular e Thymeleaf;
-- Testes automatizados;
-- Controle de versão com Git e GitHub.
-
----
+- **GitHub:** monorepo com as quatro aplicações.
+- **Microsoft Teams:** pasta do projeto em `.zip` (outros formatos não são aceitos), com o nome `RM562272_Arthur_Tenorio_CP6.zip`, e o link do GitHub, anexados pelo líder do grupo na tarefa correspondente.
 
 ---
 

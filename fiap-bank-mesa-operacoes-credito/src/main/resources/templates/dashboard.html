@@ -74,6 +74,11 @@
             overflow: hidden;
         }
 
+        /* O Bootstrap 5.3 não define esta opacidade: sem ela, ícones e score ficam invisíveis. */
+        .bg-opacity-20 {
+            --bs-bg-opacity: 0.2;
+        }
+
         /* Correção do tema escuro na tabela Bootstrap */
         .table-custom {
             --bs-table-bg: #1e293b;
@@ -257,8 +262,14 @@
         <div class="d-flex align-items-center gap-3">
                 <span class="badge bg-secondary px-3 py-2 rounded-pill fs-7">
                     <i class="fa-solid fa-user-shield me-1 text-warning"></i>
-                    Operador: Carlos Ramos
+                    Operador autenticado
                 </span>
+                <form th:action="@{/logout}" method="post" class="mb-0">
+                    <button type="submit" class="btn btn-outline-secondary btn-sm rounded-pill px-3">
+                        <i class="fa-solid fa-right-from-bracket me-1"></i>
+                        Sair
+                    </button>
+                </form>
         </div>
     </div>
 </nav>

@@ -1,8 +1,11 @@
-
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { HttpErrorResponse } from '@angular/common/http';
+
 import { CreditoService } from './services/credito.service';
+import { AuthService } from './services/auth.service';
+
 import {
   ClienteCoreInfo,
   SolicitacaoCreditoResponse,
@@ -17,31 +20,32 @@ import {
   styleUrl: './app.component.css'
 })
 export class AppComponent implements OnInit {
+
+  autenticado = false;
+  emailLogin = '';
+  senhaLogin = '';
+  erroLogin: string | null = null;
+  carregandoLogin = false;
+
   activeTab: 'home' | 'credito' | 'extrato' | 'historico' | 'core' = 'home';
-  hideBalance: boolean = false;
-  loading: boolean = false;
+
+  hideBalance = false;
+  loading = false;
+
   feedbackMessage: string | null = null;
   feedbackType: 'success' | 'warning' | 'error' = 'success';
 
-  // Dados do cliente
-  cpfCliente: string = '12345678900';
-  nomeCliente: string = 'Ana Silva';
-  rendaMensal: number = 7500;
+  cpfCliente = '';
+  nomeCliente = 'Cliente FIAP Bank';
+  rendaMensal = 7500;
 
-  // Informacoes da conta bancaria
-  contaInfo: ClienteCoreInfo = {
-    statusConta: 'ATIVA',
-    saldo: 12500.00,
-    agencia: '0001',
-    numeroConta: '12345-6'
-  };
+  // Preenchido pela consulta ao Core Bancário após o login.
+  contaInfo: ClienteCoreInfo = this.contaNaoCarregada();
 
-  // Dados do formulario de credito
-  selectedTipoCredito: string = 'EMPRÉSTIMO PESSOAL';
-  valorSolicitado: number = 15000;
-  quantidadeParcelas: number = 24;
+  selectedTipoCredito = 'EMPRÉSTIMO PESSOAL';
+  valorSolicitado = 15000;
+  quantidadeParcelas = 24;
 
-  // Tipos de credito disponiveis
   tiposCredito = [
     {
       id: 'EMPRÉSTIMO PESSOAL',
@@ -69,21 +73,19 @@ export class AppComponent implements OnInit {
     }
   ];
 
-  // Historico de solicitacoes de credito
   solicitacoes: SolicitacaoCreditoResponse[] = [];
 
-  // Extrato demonstrativo
-  // Estes registros ainda sao exemplos e nao movimentacoes consultadas na API.
   filtroExtrato: 'TODAS' | 'ENTRADAS' | 'SAIDAS' = 'TODAS';
 
+  // Extrato demonstrativo.
   transacoes: TransacaoExtrato[] = [
     {
       id: 'TX-901',
       descricao: 'Pix Recebido - Maria Santos',
       tipo: 'ENTRADA',
       categoria: 'PIX',
-      valor: 2500.00,
-      data: new Date(Date.now() - 3600000 * 2).toISOString(),
+      valor: 2500,
+      data: new Date(Date.now() - 7200000).toISOString(),
       icone: 'fa-qrcode text-emerald'
     },
     {
@@ -91,8 +93,8 @@ export class AppComponent implements OnInit {
       descricao: 'Pagamento Fatura FIAP Card',
       tipo: 'SAIDA',
       categoria: 'PAGAMENTO',
-      valor: 450.00,
-      data: new Date(Date.now() - 3600000 * 18).toISOString(),
+      valor: 450,
+      data: new Date(Date.now() - 64800000).toISOString(),
       icone: 'fa-credit-card text-danger'
     },
     {
@@ -100,8 +102,8 @@ export class AppComponent implements OnInit {
       descricao: 'Crédito Pessoal Aprovado FIAP Bank',
       tipo: 'ENTRADA',
       categoria: 'CREDITO',
-      valor: 15000.00,
-      data: new Date(Date.now() - 3600000 * 48).toISOString(),
+      valor: 15000,
+      data: new Date(Date.now() - 172800000).toISOString(),
       icone: 'fa-hand-holding-dollar text-primary'
     },
     {
@@ -110,57 +112,196 @@ export class AppComponent implements OnInit {
       tipo: 'SAIDA',
       categoria: 'TRANSFERENCIA',
       valor: 120.50,
-      data: new Date(Date.now() - 3600000 * 72).toISOString(),
+      data: new Date(Date.now() - 259200000).toISOString(),
       icone: 'fa-arrow-up-right-from-square text-amber'
     }
   ];
 
-  constructor(private creditoService: CreditoService) {}
+  constructor(
+    private creditoService: CreditoService,
+    private authService: AuthService
+  ) {}
 
   ngOnInit(): void {
+    if (this.authService.isAuthenticated()) {
+      this.iniciarSessaoCliente();
+    }
+  }
+
+  fazerLogin(): void {
+    if (!this.emailLogin.trim() || !this.senhaLogin) {
+      this.erroLogin = 'Informe e-mail e senha.';
+      return;
+    }
+
+    this.carregandoLogin = true;
+    this.erroLogin = null;
+
+    this.authService.login(
+      this.emailLogin.trim(),
+      this.senhaLogin
+    ).subscribe({
+      next: () => {
+        this.carregandoLogin = false;
+        this.senhaLogin = '';
+
+        if (!this.iniciarSessaoCliente()) {
+          this.authService.logout();
+          this.erroLogin =
+            'Este acesso exige um usuário CLIENTE com CPF válido.';
+        }
+      },
+
+      error: (err) => {
+        this.carregandoLogin = false;
+
+        this.erroLogin = err.status === 401
+          ? 'E-mail ou senha incorretos.'
+          : err.status === 400
+            ? 'Informe um e-mail válido.'
+            : 'Plataforma de Crédito indisponível. Tente novamente.';
+      }
+    });
+  }
+
+  private contaNaoCarregada(): ClienteCoreInfo {
+    return {
+      statusConta: 'INDISPONÍVEL',
+      saldo: 0,
+      agencia: '----',
+      numeroConta: '----'
+    };
+  }
+
+  private encerrarSessaoExpirada(): void {
+    // Consultas paralelas podem receber 401 juntas: só a primeira encerra a
+    // sessão, e uma resposta atrasada não derruba um login mais recente.
+    if (!this.autenticado || this.authService.isAuthenticated()) {
+      return;
+    }
+
+    this.sair();
+    this.erroLogin = 'Sessão expirada. Entre novamente.';
+  }
+
+  // Retorna a mensagem para a tela; em 401, volta ao login.
+  private mensagemErroHttp(
+    err: HttpErrorResponse,
+    mensagemPadrao: string
+  ): string {
+    if (err.status === 401) {
+      this.encerrarSessaoExpirada();
+      return '';
+    }
+
+    if (err.status === 403) {
+      return 'Você não tem permissão para esta operação.';
+    }
+
+    if (err.status === 0) {
+      return 'Plataforma de Crédito indisponível. Tente novamente.';
+    }
+
+    return err.error?.message || mensagemPadrao;
+  }
+
+  private iniciarSessaoCliente(): boolean {
+    const dados = this.authService.dadosCliente();
+
+    if (!dados) {
+      return false;
+    }
+
+    this.cpfCliente = dados.cpf;
+    this.autenticado = true;
     this.carregarDadosCore();
     this.carregarSolicitacoes();
+
+    return true;
+  }
+
+  sair(): void {
+    this.authService.logout();
+
+    this.autenticado = false;
+    this.emailLogin = '';
+    this.senhaLogin = '';
+    this.erroLogin = null;
+
+    this.cpfCliente = '';
+    this.contaInfo = this.contaNaoCarregada();
+    this.solicitacoes = [];
+    this.feedbackMessage = null;
+    this.activeTab = 'home';
   }
 
   carregarDadosCore(): void {
-    this.creditoService.consultarCoreBancario(this.cpfCliente).subscribe({
+    this.creditoService.consultarCoreBancario(
+      this.cpfCliente
+    ).subscribe({
       next: (info) => {
         if (info && info.saldo !== undefined) {
           this.contaInfo = info;
         }
       },
-      error: (err) => {
-        console.error(
-          'Erro ao consultar dados no Core Bancário via Plataforma:',
-          err
+
+      error: (err: HttpErrorResponse) => {
+        const mensagem = this.mensagemErroHttp(
+          err,
+          'Não foi possível consultar a conta no Core Bancário.'
         );
+
+        if (mensagem) {
+          this.feedbackType = 'warning';
+          this.feedbackMessage = mensagem;
+        }
       }
     });
   }
 
   carregarSolicitacoes(): void {
+    if (!this.autenticado || !this.cpfCliente) {
+      return;
+    }
+
     this.loading = true;
 
-    this.creditoService.consultarStatus(this.cpfCliente).subscribe({
+    this.creditoService.consultarStatus(
+      this.cpfCliente
+    ).subscribe({
       next: (data) => {
         this.solicitacoes = data || [];
         this.loading = false;
       },
-      error: (err) => {
-        console.error('Erro ao buscar histórico de solicitações:', err);
+
+      error: (err: HttpErrorResponse) => {
         this.solicitacoes = [];
         this.loading = false;
+
+        const mensagem = this.mensagemErroHttp(
+          err,
+          'Não foi possível consultar suas solicitações.'
+        );
+
+        if (mensagem) {
+          this.feedbackType = 'error';
+          this.feedbackMessage = mensagem;
+        }
       }
     });
   }
 
   get transacoesFiltradas(): TransacaoExtrato[] {
     if (this.filtroExtrato === 'ENTRADAS') {
-      return this.transacoes.filter(t => t.tipo === 'ENTRADA');
+      return this.transacoes.filter(
+        t => t.tipo === 'ENTRADA'
+      );
     }
 
     if (this.filtroExtrato === 'SAIDAS') {
-      return this.transacoes.filter(t => t.tipo === 'SAIDA');
+      return this.transacoes.filter(
+        t => t.tipo === 'SAIDA'
+      );
     }
 
     return this.transacoes;
@@ -179,22 +320,22 @@ export class AppComponent implements OnInit {
   }
 
   get parcelaEstimada(): number {
-    if (!this.quantidadeParcelas || this.quantidadeParcelas <= 0) {
+    if (this.quantidadeParcelas <= 0) {
       return 0;
     }
 
-    const taxaMes = this.getTaxaDecimal();
-    const pv = this.valorSolicitado;
-    const n = this.quantidadeParcelas;
+    const taxa = this.getTaxaDecimal();
+    const valor = this.valorSolicitado;
+    const parcelas = this.quantidadeParcelas;
 
-    if (taxaMes === 0) {
-      return pv / n;
+    if (taxa === 0) {
+      return valor / parcelas;
     }
 
     return (
-      pv * taxaMes * Math.pow(1 + taxaMes, n)
+      valor * taxa * Math.pow(1 + taxa, parcelas)
     ) / (
-      Math.pow(1 + taxaMes, n) - 1
+      Math.pow(1 + taxa, parcelas) - 1
     );
   }
 
@@ -219,10 +360,21 @@ export class AppComponent implements OnInit {
   }
 
   solicitarCredito(): void {
-    if (!this.valorSolicitado || this.valorSolicitado <= 0) {
+    if (!this.autenticado) {
+      this.feedbackType = 'error';
+      this.feedbackMessage = 'Faça login para continuar.';
+      return;
+    }
+
+    if (
+      !this.valorSolicitado ||
+      this.valorSolicitado <= 0 ||
+      !Number.isInteger(this.quantidadeParcelas) ||
+      this.quantidadeParcelas <= 0
+    ) {
       this.feedbackType = 'error';
       this.feedbackMessage =
-        'Por favor, informe um valor desejado válido para o crédito.';
+        'Informe um valor e uma quantidade de parcelas válidos.';
       return;
     }
 
@@ -245,15 +397,12 @@ export class AppComponent implements OnInit {
         if (res.status === 'APROVADO') {
           this.feedbackType = 'success';
           this.feedbackMessage =
-            `Crédito de R$ ${this.valorSolicitado.toLocaleString('pt-BR')} APROVADO com sucesso!`;
-
-          // A aprovacao nao altera o saldo bancario.
-          // O saldo deve continuar sendo consultado no Core Bancario.
+            `Crédito de R$ ${this.valorSolicitado.toLocaleString('pt-BR')} aprovado!`;
 
         } else if (res.status === 'EM_ANALISE') {
           this.feedbackType = 'warning';
           this.feedbackMessage =
-            `Sua solicitação de R$ ${this.valorSolicitado.toLocaleString('pt-BR')} foi encaminhada para a Mesa de Operações.`;
+            'Solicitação encaminhada para a Mesa de Operações.';
 
         } else {
           this.feedbackType = 'error';
@@ -264,17 +413,24 @@ export class AppComponent implements OnInit {
         this.carregarSolicitacoes();
 
         setTimeout(() => {
-          this.activeTab = 'historico';
+          if (this.autenticado) {
+            this.activeTab = 'historico';
+          }
         }, 1500);
       },
 
-      error: (err) => {
+      error: (err: HttpErrorResponse) => {
         this.loading = false;
-        this.feedbackType = 'error';
-        this.feedbackMessage =
-          'Erro ao processar solicitação na Plataforma de Crédito. Verifique se o servidor backend está online.';
 
-        console.error('Erro na solicitação de crédito:', err);
+        const mensagem = this.mensagemErroHttp(
+          err,
+          'Erro ao processar solicitação na Plataforma de Crédito.'
+        );
+
+        if (mensagem) {
+          this.feedbackType = 'error';
+          this.feedbackMessage = mensagem;
+        }
       }
     });
   }

@@ -1,13 +1,17 @@
 
 package br.com.fiap.bank.plataforma.exception;
 
+import br.com.fiap.bank.plataforma.application.exception.CredenciaisInvalidasException;
 import br.com.fiap.bank.plataforma.domain.exception.CoreBancarioIndisponivelException;
 import br.com.fiap.bank.plataforma.domain.exception.SolicitacaoNaoEncontradaException;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authorization.AuthorizationDeniedException;
+import org.springframework.web.ErrorResponse;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -17,6 +21,7 @@ import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -50,6 +55,28 @@ public class GlobalExceptionHandler {
                 .orElse("Dados invalidos.");
 
         return resposta(HttpStatus.BAD_REQUEST, mensagem);
+    }
+
+    // E-mail ou senha incorretos no login
+    @ExceptionHandler(CredenciaisInvalidasException.class)
+    public ResponseEntity<Map<String, Object>> tratarCredenciaisInvalidas(
+            CredenciaisInvalidasException ex) {
+
+        return resposta(
+                HttpStatus.UNAUTHORIZED,
+                ex.getMessage()
+        );
+    }
+
+    // Corpo da requisicao ausente ou com JSON invalido
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<Map<String, Object>> tratarCorpoInvalido(
+            HttpMessageNotReadableException ex) {
+
+        return resposta(
+                HttpStatus.BAD_REQUEST,
+                "O corpo da requisicao esta ausente ou invalido."
+        );
     }
 
     // Argumento invalido
@@ -134,7 +161,17 @@ public class GlobalExceptionHandler {
     public ResponseEntity<Map<String, Object>> tratarErroInterno(
             Exception ex) {
 
-        ex.printStackTrace();
+        // Erros do proprio Spring MVC (rota inexistente, metodo nao suportado,
+        // parametro ausente) mantem o status correto em vez de virar 500.
+        if (ex instanceof ErrorResponse erroMvc) {
+            HttpStatus status = HttpStatus.valueOf(
+                    erroMvc.getStatusCode().value()
+            );
+
+            return resposta(status, status.getReasonPhrase());
+        }
+
+        log.error("Erro interno inesperado", ex);
 
         return resposta(
                 HttpStatus.INTERNAL_SERVER_ERROR,

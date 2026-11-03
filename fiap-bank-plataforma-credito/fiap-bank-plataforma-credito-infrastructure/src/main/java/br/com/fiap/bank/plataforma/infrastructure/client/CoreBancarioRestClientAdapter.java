@@ -46,7 +46,8 @@ public class CoreBancarioRestClientAdapter implements CoreBancarioGateway {
             return resposta;
 
         } catch (RestClientException e) {
-            log.warn("Core Bancario indisponivel ao consultar o CPF informado: {}", e.getMessage());
+            // A mensagem da excecao traz o corpo da resposta, que contem o CPF (LGPD).
+            log.warn("Falha ao consultar a conta no Core Bancario: {}", e.getClass().getSimpleName());
             throw new CoreBancarioIndisponivelException(
                     "Falha ao consultar a conta do cliente no Core Bancario.",
                     e

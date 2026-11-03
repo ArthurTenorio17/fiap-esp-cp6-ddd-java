@@ -34,7 +34,7 @@ public class CreditoRestController {
     // CLIENTE: somente para o proprio CPF
     // OPERADOR e ADMIN: qualquer CPF
     @PreAuthorize(
-            "hasAnyRole('CLIENTE', 'OPERADOR', 'ADMIN') " +
+            "(hasAuthority('SCOPE_ROLE_CLIENTE') or hasAnyRole('OPERADOR', 'ADMIN')) " +
                     "and @cpfAuthorizationService.podeAcessarCpf(#request.cpfCliente())"
     )
     @PostMapping("/solicitacoes")
@@ -51,7 +51,7 @@ public class CreditoRestController {
 
     // Consultar solicitacoes por CPF
     @PreAuthorize(
-            "hasAnyRole('CLIENTE', 'OPERADOR', 'ADMIN') " +
+            "(hasAuthority('SCOPE_ROLE_CLIENTE') or hasAnyRole('OPERADOR', 'ADMIN')) " +
                     "and @cpfAuthorizationService.podeAcessarCpf(#cpf)"
     )
     @GetMapping(value = "/solicitacoes", params = "cpf")
@@ -126,11 +126,15 @@ public class CreditoRestController {
     }
 
     // Consultar conta do cliente no Core Bancario
-    // Somente OPERADOR e ADMIN
-    @PreAuthorize("hasAnyRole('OPERADOR', 'ADMIN')")
+    // CLIENTE: somente a propria conta
+    // OPERADOR e ADMIN: qualquer CPF
+    @PreAuthorize(
+            "(hasAuthority('SCOPE_ROLE_CLIENTE') or hasAnyRole('OPERADOR', 'ADMIN')) " +
+                    "and @cpfAuthorizationService.podeAcessarCpf(#cpf)"
+    )
     @GetMapping("/contas/cliente/{cpf}")
     public ResponseEntity<Map<String, Object>> consultarClienteCore(
-            @PathVariable String cpf
+            @P("cpf") @PathVariable String cpf
     ) {
         return ResponseEntity.ok(
                 coreBancarioGateway.consultarContaCliente(cpf)

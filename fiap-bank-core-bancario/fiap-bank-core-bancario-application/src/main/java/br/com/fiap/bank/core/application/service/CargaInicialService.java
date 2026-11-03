@@ -30,6 +30,8 @@ public class CargaInicialService {
                 "7500.00", "12345-6", "12500.00");
         cadastrar("98765432100", "Carlos Eduardo Oliveira", "carlos.oliveira@fiap.com.br", LocalDate.of(1988, 11, 2),
                 "12000.00", "78901-2", "45800.50");
+        cadastrar("55544433399", "Mariana Souza", "mariana.souza@fiap.com.br", LocalDate.of(1992, 3, 15),
+                "4200.00", "55544-3", "850.00");
 
         log.info("Core Bancario: dados iniciais carregados");
     }

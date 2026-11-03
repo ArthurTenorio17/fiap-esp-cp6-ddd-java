@@ -1,0 +1,5 @@
+# Perfil de demonstracao local. Tambem habilita os usuarios de teste (UsuarioDataInitializer).
+# A chave abaixo e o exemplo publico do enunciado do CP6: nao e um segredo real
+# e nunca deve ser usada fora do ambiente local.
+jwt:
+  secret: ${JWT_SECRET:404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}

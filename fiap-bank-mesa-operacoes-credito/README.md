@@ -10,7 +10,7 @@ A comunicação com a **Plataforma de Crédito** é realizada de forma declarati
 
 - **Java 21**
 - **Spring Boot 4.1**
-- **Spring Cloud OpenFeign 2024.0.0**
+- **Spring Cloud OpenFeign (Spring Cloud 2025.1.2)**
 - **Thymeleaf** (renderização server-side de templates HTML)
 - **Spring Web**
 - **Maven**
@@ -62,6 +62,18 @@ As seguintes propriedades podem ser customizadas no arquivo `src/main/resources/
 | :--- | :--- | :--- | :--- |
 | `server.port` | `SERVER_PORT` | `8082` | Porta HTTP da aplicação |
 | `plataforma.credito.url` | `PLATAFORMA_CREDITO_URL` | `http://localhost:8081` | URL base da Plataforma de Crédito consumida via Feign |
+| `mesa.auth.cookie-secure` | `MESA_COOKIE_SECURE` | `false` | Use `true` quando a Mesa for servida por HTTPS |
+
+---
+
+## 🔐 Autenticação e Propagação do Token
+
+1. O operador entra em `/login`; a Mesa autentica o usuário em `POST /api/auth/login` na Plataforma.
+2. O JWT fica em um cookie `HttpOnly` e `SameSite=Strict`, sem `HttpSession`.
+3. O `RequestInterceptor` de `FeignClientConfig` envia `Authorization: Bearer <token>` em cada chamada à Plataforma.
+4. Em 401, a Mesa limpa o cookie e volta ao login. Em 403, informa que o usuário não tem perfil de OPERADOR ou ADMIN. Em falhas de comunicação, o dashboard entra em modo offline.
+
+Usuários de demonstração: `teste@fiapbank.com` / `Teste@123` (OPERADOR) e `admin@fiapbank.com` / `Admin@123` (ADMIN).
 
 ---
 

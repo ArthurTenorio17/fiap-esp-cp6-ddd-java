@@ -3,6 +3,7 @@ package br.com.fiap.bank.plataforma.application.service;
 
 import br.com.fiap.bank.plataforma.application.dto.LoginRequest;
 import br.com.fiap.bank.plataforma.application.dto.LoginResponse;
+import br.com.fiap.bank.plataforma.application.exception.CredenciaisInvalidasException;
 import br.com.fiap.bank.plataforma.domain.port.UsuarioConsultaPort;
 import br.com.fiap.bank.plataforma.domain.port.SenhaVerificacaoPort;
 import br.com.fiap.bank.plataforma.domain.port.TokenGeracaoPort;
@@ -27,11 +28,7 @@ public class AuthService {
 
         var usuario = usuarioConsultaPort
                 .buscarPorEmail(request.email())
-                .orElseThrow(() ->
-                        new IllegalArgumentException(
-                                "Credenciais inválidas"
-                        )
-                );
+                .orElseThrow(CredenciaisInvalidasException::new);
 
         boolean senhaValida = senhaVerificacaoPort.verificar(
                 request.senha(),
@@ -39,9 +36,7 @@ public class AuthService {
         );
 
         if (!senhaValida) {
-            throw new IllegalArgumentException(
-                    "Credenciais inválidas"
-            );
+            throw new CredenciaisInvalidasException();
         }
 
         String token = tokenGeracaoPort.gerarToken(usuario);
@@ -49,7 +44,7 @@ public class AuthService {
         return new LoginResponse(
                 token,
                 "Bearer",
-                3600
+                tokenGeracaoPort.expiracaoEmSegundos()
         );
     }
 }

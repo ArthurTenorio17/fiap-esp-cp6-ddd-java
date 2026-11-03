@@ -11,4 +11,9 @@ spring:
 
 plataforma:
   credito:
-    url: http://localhost:8081
+    url: ${PLATAFORMA_CREDITO_URL:http://localhost:8081}
+
+mesa:
+  auth:
+    # Use true quando a Mesa for servida por HTTPS.
+    cookie-secure: ${MESA_COOKIE_SECURE:false}

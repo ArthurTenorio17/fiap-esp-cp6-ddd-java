@@ -1,5 +1,64 @@
 
-<div class="mobile-frame">
+<!-- LOGIN JWT -->
+<div class="mobile-frame" *ngIf="!autenticado">
+  <div class="status-bar">
+    <span class="time">FIAP Bank</span>
+  </div>
+
+  <div class="login-container">
+    <div class="brand-logo">F</div>
+
+    <h1 class="brand-title">
+      FIAP <span>BANK</span>
+    </h1>
+
+    <h2>Acesse sua conta</h2>
+
+    <p>Entre com seu usuário CLIENTE da Plataforma de Crédito.</p>
+
+    <form (ngSubmit)="fazerLogin()">
+      <div class="form-group">
+        <label class="input-label" for="login-email">E-mail</label>
+        <input
+          id="login-email"
+          name="email"
+          type="email"
+          class="custom-input"
+          [(ngModel)]="emailLogin"
+          autocomplete="username"
+          required
+        />
+      </div>
+
+      <div class="form-group">
+        <label class="input-label" for="login-senha">Senha</label>
+        <input
+          id="login-senha"
+          name="senha"
+          type="password"
+          class="custom-input"
+          [(ngModel)]="senhaLogin"
+          autocomplete="current-password"
+          required
+        />
+      </div>
+
+      <p *ngIf="erroLogin" class="text-danger" role="alert">
+        {{ erroLogin }}
+      </p>
+
+      <button
+        type="submit"
+        class="submit-btn"
+        [disabled]="carregandoLogin"
+      >
+        {{ carregandoLogin ? 'Autenticando...' : 'Entrar' }}
+      </button>
+    </form>
+  </div>
+</div>
+
+<div class="mobile-frame" *ngIf="autenticado">
 
   <!-- Barra de status -->
   <div class="status-bar">
@@ -756,6 +815,14 @@
           Informações sincronizadas com a API RESTful do
           <strong>fiap-bank-core-bancario</strong>.
         </div>
+
+        <button
+          class="btn btn-outline-secondary w-100 mt-3"
+          (click)="sair()">
+
+          <i class="fa-solid fa-right-from-bracket me-2"></i>
+          Sair
+        </button>
       </div>
     </div>
 

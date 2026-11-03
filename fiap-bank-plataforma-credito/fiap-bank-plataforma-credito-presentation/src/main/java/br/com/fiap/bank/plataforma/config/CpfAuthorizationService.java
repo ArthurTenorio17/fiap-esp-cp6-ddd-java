@@ -35,7 +35,10 @@ public class CpfAuthorizationService {
         boolean cliente = authentication.getAuthorities()
                 .stream()
                 .map(GrantedAuthority::getAuthority)
-                .anyMatch("ROLE_CLIENTE"::equals);
+                .anyMatch(autoridade ->
+                        autoridade.equals("ROLE_CLIENTE")
+                                || autoridade.equals("SCOPE_ROLE_CLIENTE")
+                );
 
         if (!cliente) {
             return false;

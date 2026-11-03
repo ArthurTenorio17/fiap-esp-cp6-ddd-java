@@ -32,7 +32,7 @@ public class CreditoLegacyController {
 
     // Solicitar credito
     @PreAuthorize(
-            "hasAnyRole('CLIENTE', 'OPERADOR', 'ADMIN') " +
+            "(hasAuthority('SCOPE_ROLE_CLIENTE') or hasAnyRole('OPERADOR', 'ADMIN')) " +
                     "and @cpfAuthorizationService.podeAcessarCpf(#request.cpfCliente())"
     )
     @PostMapping("/solicitarCredito")
@@ -46,7 +46,7 @@ public class CreditoLegacyController {
 
     // Consultar status de credito
     @PreAuthorize(
-            "hasAnyRole('CLIENTE', 'OPERADOR', 'ADMIN') " +
+            "(hasAuthority('SCOPE_ROLE_CLIENTE') or hasAnyRole('OPERADOR', 'ADMIN')) " +
                     "and @cpfAuthorizationService.podeAcessarCpf(#request.cpfCliente())"
     )
     @PostMapping("/consultarStatusCredito")
@@ -101,10 +101,13 @@ public class CreditoLegacyController {
     }
 
     // Consultar cliente no Core Bancario
-    @PreAuthorize("hasAnyRole('OPERADOR', 'ADMIN')")
+    @PreAuthorize(
+            "(hasAuthority('SCOPE_ROLE_CLIENTE') or hasAnyRole('OPERADOR', 'ADMIN')) " +
+                    "and @cpfAuthorizationService.podeAcessarCpf(#request.cpfCliente())"
+    )
     @PostMapping("/consultarClienteCore")
     public ResponseEntity<Map<String, Object>> consultarClienteCore(
-            @Valid @RequestBody ConsultarStatusRequest request
+            @P("request") @Valid @RequestBody ConsultarStatusRequest request
     ) {
         return ResponseEntity.ok(
                 coreBancarioGateway.consultarContaCliente(

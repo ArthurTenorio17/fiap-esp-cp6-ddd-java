@@ -6,6 +6,11 @@ spring:
   application:
     name: fiap-bank-plataforma-credito
 
+  # Sem perfil informado, sobe em modo demonstracao (application-dev.yml).
+  # Fora do ambiente local, use SPRING_PROFILES_ACTIVE=prod: JWT_SECRET passa a ser obrigatorio.
+  profiles:
+    default: dev
+
   datasource:
     url: jdbc:h2:mem:plataformacreditodb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
     driver-class-name: org.h2.Driver
@@ -27,8 +32,7 @@ core:
   bancario:
     url: ${CORE_BANCARIO_URL:http://localhost:8080/api/v1}
 
-security:
-  jwt:
-    secret: ${JWT_SECRET}
-    expiration-minutes: 60
-    issuer: fiap-bank
+jwt:
+  secret: ${JWT_SECRET}
+  expiration-seconds: ${JWT_EXPIRATION_SECONDS:7200}
+  issuer: ${JWT_ISSUER:fiap-bank-plataforma-credito}

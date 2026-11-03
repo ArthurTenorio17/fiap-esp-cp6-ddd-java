@@ -356,21 +356,22 @@ Quando ocorre uma falha de comunicação, a aplicação utiliza tratamento de ex
 | `server.port` | Porta HTTP, configurada como 8081 |
 | `spring.datasource.url` | Conexão com o banco H2 |
 | `core.bancario.url` | URL do Core Bancário |
-| `security.jwt.secret` | Chave de assinatura JWT |
-| `security.jwt.expiration-minutes` | Tempo de validade do token |
-| `security.jwt.issuer` | Emissor do token |
+| `jwt.secret` | Chave de assinatura JWT (`JWT_SECRET`) |
+| `jwt.expiration-seconds` | Validade do token em segundos (`JWT_EXPIRATION_SECONDS`, padrão 7200) |
+| `jwt.issuer` | Emissor do token (`JWT_ISSUER`) |
 
 ### Configuração da chave JWT
 
-A chave JWT deve ser configurada por variável de ambiente, sem inserir o segredo real no código ou no GitHub.
+Sem perfil informado, a aplicação sobe no perfil `dev`, que cria os usuários de teste e usa a chave de exemplo do enunciado (`application-dev.yml`). Essa chave é pública e serve apenas para uso local.
 
-Exemplo no Git Bash:
+Em qualquer outro perfil, `JWT_SECRET` é obrigatória, com no mínimo 32 bytes, e a aplicação não inicia sem ela:
 
 ```bash
-export JWT_SECRET="CHAVE_BASE64_VALIDA_COM_PELO_MENOS_32_BYTES"
+export SPRING_PROFILES_ACTIVE=prod
+export JWT_SECRET="$(openssl rand -base64 48)"
 ```
 
-O nome da variável deve corresponder à configuração utilizada no `application.yml`.
+Nunca insira um segredo real no código ou no GitHub.
 
 ---
 

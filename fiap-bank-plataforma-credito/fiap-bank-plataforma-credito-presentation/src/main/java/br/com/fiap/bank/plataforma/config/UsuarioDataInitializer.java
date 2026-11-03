@@ -33,17 +33,27 @@ public class UsuarioDataInitializer implements CommandLineRunner {
                 "Teste@123",
                 "Operador FIAP Bank",
                 "OPERADOR",
-                "12345678900",
-                "12345-6"
+                "11122233344",
+                "00000-1"
         );
 
+        cadastrarUsuario(
+                "admin@fiapbank.com",
+                "Admin@123",
+                "Administrador FIAP Bank",
+                "ADMIN",
+                "22233344455",
+                "00000-2"
+        );
+
+        // Mesmo CPF e conta de Carlos Eduardo Oliveira na carga do Core Bancario.
         cadastrarUsuario(
                 "cliente@fiapbank.com",
                 "Cliente@123",
                 "Cliente Teste FIAP",
                 "CLIENTE",
                 "98765432100",
-                "98765-4"
+                "78901-2"
         );
     }
 

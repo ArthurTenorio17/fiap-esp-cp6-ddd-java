@@ -8,22 +8,24 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
+import org.springframework.security.oauth2.jwt.JwtValidators;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
 
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
-import java.util.Base64;
+import java.nio.charset.StandardCharsets;
 
 @Configuration
 public class JwtConfig {
 
     @Bean
     public SecretKey jwtSecretKey(
-            @Value("${security.jwt.secret}") String secret) {
+            @Value("${jwt.secret}") String secret) {
 
-        byte[] keyBytes = Base64.getDecoder().decode(secret);
+        byte[] keyBytes = secret.getBytes(StandardCharsets.UTF_8);
 
+        // HS256 exige uma chave de pelo menos 256 bits (RFC 7518).
         if (keyBytes.length < 32) {
             throw new IllegalArgumentException(
                     "A chave JWT deve ter pelo menos 256 bits"
@@ -40,11 +42,22 @@ public class JwtConfig {
         );
     }
 
+    // O Resource Server valida sozinho a assinatura, a expiracao e o emissor,
+    // sem consultar banco de dados ou sessao.
     @Bean
-    public JwtDecoder jwtDecoder(SecretKey jwtSecretKey) {
-        return NimbusJwtDecoder
+    public JwtDecoder jwtDecoder(
+            SecretKey jwtSecretKey,
+            @Value("${jwt.issuer}") String issuer) {
+
+        NimbusJwtDecoder decoder = NimbusJwtDecoder
                 .withSecretKey(jwtSecretKey)
                 .macAlgorithm(MacAlgorithm.HS256)
                 .build();
+
+        decoder.setJwtValidator(
+                JwtValidators.createDefaultWithIssuer(issuer)
+        );
+
+        return decoder;
     }
 }
